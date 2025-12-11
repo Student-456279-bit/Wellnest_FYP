@@ -1,0 +1,3 @@
+flask
+flask_cors
+sib_api_v3_sdk

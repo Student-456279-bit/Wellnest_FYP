@@ -1,0 +1,42 @@
+import sqlite3
+
+# === CONFIGURE DATABASE PATH ===
+DB_PATH = "./Wellnest_Database.db"  # <-- change this to your database filename
+
+# Connect to database
+conn = sqlite3.connect(DB_PATH)
+cursor = conn.cursor()
+
+# Drop old Health_Profiles tables
+cursor.execute("DROP TABLE IF EXISTS Health_Profiles;")
+cursor.execute("DROP TABLE IF EXISTS Health_Profiles_New;")
+print("Dropped old Health_Profiles and Health_Profiles_New tables (if existed).")
+
+# Create new Health_Profiles table (only new fields)
+cursor.execute("""CREATE TABLE IF NOT EXISTS Health_Profiles (
+    Users_Email TEXT PRIMARY KEY NOT NULL,
+    height REAL,
+    weight REAL,
+    bodyFat REAL,
+    bmi REAL,
+    activityLevel TEXT,
+    injuries TEXT,
+    medical TEXT,
+    allergies TEXT,
+    sleep REAL,
+    workHours REAL,
+    stress INTEGER,
+    mainGoal TEXT,
+    secondaryGoals TEXT,
+    workoutMinutes INTEGER,
+    workoutDays INTEGER,
+    dietaryPreference TEXT,
+    cuisinePreference TEXT,
+    dislikedFoods TEXT,
+    mealsPerDay INTEGER,
+    FOREIGN KEY (Users_Email) REFERENCES Users_Auth(Users_Email) ON DELETE CASCADE)""");
+
+
+conn.commit()
+conn.close()
+print("New Health_Profiles table created successfully with updated fields only.")
