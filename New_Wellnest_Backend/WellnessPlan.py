@@ -45,28 +45,45 @@ def generate_plan_logic(user_profile):
     if df_food is None or df_exercise is None:
         raise Exception("Data not loaded")
 
-    # 1. MACROS
-    if user_profile['gender'].lower() == 'male':
+    # 1. MACROS & CALORIES
+    # BMR Calculation (Mifflin-St Jeor Equation)
+    if user_profile.get('gender', 'male').lower() == 'male':
         bmr = (10 * user_profile['weight_kg']) + (6.25 * user_profile['height_cm']) - (5 * user_profile['age']) + 5
     else:
         bmr = (10 * user_profile['weight_kg']) + (6.25 * user_profile['height_cm']) - (5 * user_profile['age']) - 161
     
-    multiplier = 1.55 if user_profile['activity_level'] == "active" else 1.2
+    # Activity Multiplier
+    act_map = {
+        "sedentary": 1.2,
+        "lightly_active": 1.375,
+        "moderately_active": 1.55,
+        "very_active": 1.725
+    }
+    multiplier = act_map.get(user_profile['activity_level'], 1.2)
     tdee = bmr * multiplier
-    target_cals = int(tdee - 500) if user_profile['goal'] == "weight_loss" else int(tdee)
+    
+    # Goal Adjustment
+    goal = user_profile['goal']
+    if goal == "weight_loss":
+        target_cals = int(tdee - 500)
+    elif goal == "muscle_gain":
+        target_cals = int(tdee + 300) # Surplus for muscle
+    else: # maintain
+        target_cals = int(tdee)
+
+    # Safety bounds for calories
+    if target_cals < 1200: target_cals = 1200
 
     # 2. FOOD (Diet & Cuisine Filter)
     menu = df_food.copy()
     
-    # Simple diet filter (if mechanism exists in CSV, user snippet assumed 'is_vegetarian' column)
-    # converting diet_type to lower case
-    diet = user_profile['diet_type'].lower()
-    if diet == "veg" or diet == "vegetarian":
-        if 'is_vegetarian' in menu.columns:
-            menu = menu[menu['is_vegetarian'] == True]
+    # Simple diet filter
+    diet = user_profile.get('diet_type', 'non-veg').lower()
+    if diet in ["veg", "vegetarian"] and 'is_vegetarian' in menu.columns:
+        menu = menu[menu['is_vegetarian'] == True]
     
     # Cuisine Filter
-    pref_cuisine = user_profile['prefer_cuisine'].lower()
+    pref_cuisine = user_profile.get('prefer_cuisine', 'international').lower()
     if 'pakistani_cuisine' in menu.columns:
         if pref_cuisine == "pakistani":
             menu = menu[menu['pakistani_cuisine'] == True]
@@ -74,52 +91,105 @@ def generate_plan_logic(user_profile):
             menu = menu[menu['pakistani_cuisine'] == False]
 
     day_menu = {}
+    total_planned_cals = 0
+    # Distribute calories: Breakfast 30%, Lunch 40%, Dinner 30%
     for meal, pct in [("Breakfast", 0.3), ("Lunch", 0.4), ("Dinner", 0.3)]:
-        # Range +/- 150 kcal
-        target_meal_cal = target_cals * pct
-        opts = menu[(menu['calories_kcal'] >= target_meal_cal - 150) & (menu['calories_kcal'] <= target_meal_cal + 150)]
+        meal_target = target_cals * pct
+        # Search range +/- 20%
+        opts = menu[(menu['calories_kcal'] >= meal_target * 0.8) & (menu['calories_kcal'] <= meal_target * 1.2)]
         
         if opts.empty:
-            # Fallback to random if no exact match in range
-            opts = menu
+            # Fallback: widen search or random
+            opts = menu[(menu['calories_kcal'] >= meal_target * 0.6) & (menu['calories_kcal'] <= meal_target * 1.4)]
+            if opts.empty: opts = menu # Final fallback
         
         if not opts.empty:
             selected = opts.sample(1).iloc[0]
-            # Ensure safe string conversion
             dish_name = selected['dish'] if 'dish' in selected else "Unknown Dish"
             cal_val = int(selected['calories_kcal']) if 'calories_kcal' in selected else 0
             day_menu[meal] = f"{dish_name} ({cal_val} kcal)"
+            total_planned_cals += cal_val
         else:
-            day_menu[meal] = "No suitable meal found"
+            day_menu[meal] = "No meal found"
 
-    # 3. WORKOUT (Injury Filter)
+    # 3. WORKOUT (Goal & Activity Based Duration)
     valid_exercises = df_exercise.copy()
     injuries = [i.lower() for i in user_profile.get('injuries', [])]
     
+    # Injury Filters
     if 'knee' in injuries and 'safe_for_knee_injury' in valid_exercises.columns:
         valid_exercises = valid_exercises[valid_exercises['safe_for_knee_injury'] == 'yes']
     if 'back' in injuries and 'safe_for_back_injury' in valid_exercises.columns:
         valid_exercises = valid_exercises[valid_exercises['safe_for_back_injury'] == 'yes']
     
-    # Sample 3 exercises
-    if len(valid_exercises) >= 3:
-        workout = valid_exercises.sample(3)[['exercise_name', 'duration_seconds']].to_dict('records')
-    else:
-        workout = valid_exercises[['exercise_name', 'duration_seconds']].to_dict('records')
-
-    # 4. SLEEP & MEDITATION (Rules)
-    age = user_profile['age']
-    sleep = "8-10 hrs" if age < 18 else ("7-9 hrs" if age < 65 else "7-8 hrs")
+    # Determine Target Duration (minutes)
+    base_duration = 20 # Minimum
+    if user_profile['activity_level'] in ["moderately_active", "very_active"]:
+        base_duration += 20
     
-    stress = user_profile['stress_level'].lower()
-    meditation = "20 mins (Deep Breath)" if stress == "high" else ("10 mins (Visual)" if stress == "medium" else "5 mins (Gratitude)")
+    if goal == "weight_loss":
+        base_duration += 10 # More cardio/movement
+    elif goal == "muscle_gain":
+        base_duration += 15 # More volume
+    
+    base_duration = min(base_duration, 60) # Cap at 60 mins for MVP
+    target_seconds = base_duration * 60
+    
+    current_seconds = 0
+    workout_plan = []
+    
+    # Accumulate exercises
+    # To avoid endless loops if list is small, we cycle max 30 times or until full
+    attempts = 0
+    while current_seconds < target_seconds and attempts < 30 and not valid_exercises.empty:
+        # Sample a batch
+        batch_size = 3
+        sample = valid_exercises.sample(min(len(valid_exercises), batch_size))
+        
+        for _, row in sample.iterrows():
+            if current_seconds >= target_seconds: break
+            
+            ex_name = row['exercise_name']
+            # Avoid direct duplicates in sequence if possible (simple check)
+            if workout_plan and workout_plan[-1]['exercise_name'] == ex_name:
+                continue
+                
+            dur = int(row['duration_seconds']) if 'duration_seconds' in row else 30
+            workout_plan.append({
+                "exercise_name": ex_name,
+                "duration_seconds": dur,
+                "reps": "12-15 reps" if goal == "muscle_gain" and dur < 10 else f"{dur} sec" 
+            })
+            current_seconds += dur + 30 # Add 30s rest/transition estimate
+        attempts += 1
+        
+    # 4. SLEEP & MEDITATION
+    age = user_profile['age']
+    sleep = "7-9 hrs" # Default
+    if age < 18: sleep = "8-10 hrs"
+    elif age >= 65: sleep = "7-8 hrs"
+    
+    stress = user_profile.get('stress_level', 'medium').lower()
+    meditation = "10 mins (Daily Mindfulness)"
+    if stress == "high":
+        meditation = "20 mins (Deep Breathing & Body Scan)"
+    elif stress == "low":
+        meditation = "5 mins (Morning Gratitude)"
 
     return {
-        "food": {"target": target_cals, "menu": day_menu},
-        "water": f"{round(user_profile['weight_kg'] * 0.033, 1)}L",
+        "food": {
+            "target_calories": target_cals, 
+            "planned_calories": total_planned_cals,
+            "menu": day_menu
+        },
+        "water": f"{round(user_profile['weight_kg'] * 0.033, 1)} L",
         "sleep": sleep,
         "meditation": meditation,
-        "workout": workout
+        "workout": {
+            "total_duration_minutes": round(current_seconds / 60),
+            "goal_focus": goal.replace('_', ' ').title(),
+            "exercises": workout_plan
+        }
     }
 
 @wellness_bp.route('/generate', methods=['POST'])
@@ -127,6 +197,7 @@ def generate_plan():
     try:
         data = request.get_json()
         email = data.get('email')
+        regenerate = data.get('regenerate', False)
         
         if not email:
             return jsonify({"error": "Email is required"}), 400
@@ -140,11 +211,16 @@ def generate_plan():
         existing_plan = cur.fetchone()
         
         if existing_plan:
-            conn.close()
-            return jsonify({
-                "message": "Plan already exists for this user",
-                "plan": json.loads(existing_plan['plan_data']) 
-            }), 409  # Conflict
+            if regenerate:
+                # Delete existing plan to allow generation of a new one
+                cur.execute("DELETE FROM GeneratedPlans WHERE user_email = ?", (email,))
+                existing_plan = None # Treat as if no plan exists
+            else:
+                conn.close()
+                return jsonify({
+                    "message": "Plan already exists for this user",
+                    "plan": json.loads(existing_plan['plan_data']) 
+                }), 409  # Conflict
 
         # 2. Fetch User Profile
         # We need to join Users_Auth to fetch or just use Health_Profiles if email is FK

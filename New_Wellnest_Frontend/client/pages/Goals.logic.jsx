@@ -179,13 +179,65 @@ export default function GoalsLogic(props) {
     isLoading: false,
   });
 
-  const handleRegeneratePlan = (goal) => {
+  const handleRegeneratePlan = async (goal) => {
+    // Only allow regeneration for the whole plan context, but user clicked a specific goal?
+    // The prompt says "regenerate the plan using the buttons on the goals page".
+    // Usually "Regenerate Plan" might be a global action, but if it's per goal (e.g. "Regenerate Workout"),
+    // the backend currently regenerates the *entire* plan.
+    // So for MVP, we'll regenerate the whole plan regardless of which goal triggered it, 
+    // or arguably only update that part if backend supported it.
+    // Given the backend change `generate_plan_logic` regenerates everything, we'll do a full regen.
+
+    if (!confirm(`Are you sure you want to regenerate your entire wellness plan based on your latest profile? This will overwrite your current targets.`)) {
+      return;
+    }
+
     setRegenModalState({
       isOpen: true,
-      title: "Regenerate Plan",
-      message: `Regenerating the plan for "${goal.name}" is not implemented yet.`,
-      isLoading: false,
+      title: "Regenerating Plan...",
+      message: "Please wait while we create a new plan for you.",
+      isLoading: true,
     });
+
+    if (user && user.email) {
+      const res = await generateWellnessPlan(user.email, true); // regenerate = true
+
+      if (res.plan) {
+        const p = res.plan;
+        // Calculate Workout Total Duration
+        let workoutMins = 30; // default
+        if (p.workout && Array.isArray(p.workout)) {
+          const totalSec = p.workout.reduce((acc, curr) => acc + (curr.duration_seconds || 0), 0);
+          if (totalSec > 0) workoutMins = Math.ceil(totalSec / 60);
+          if (workoutMins < 1) workoutMins = 1;
+        }
+
+        setGoals(prevGoals => prevGoals.map(g => {
+          switch (g.id) {
+            case 1: return { ...g, target: p.meditation || g.target };
+            case 2: return { ...g, target: `${workoutMins} min` };
+            case 3: return { ...g, target: p.food?.target ? `${p.food.target} kcal` : g.target };
+            case 4: return { ...g, target: p.water || g.target };
+            case 5: return { ...g, target: p.sleep || g.target };
+            default: return g;
+          }
+        }));
+
+        setRegenModalState({
+          isOpen: true,
+          title: "Success!",
+          message: "Your plan has been regenerated.",
+          isLoading: false,
+        });
+      } else {
+        setRegenModalState({
+          isOpen: true,
+          title: "Error",
+          message: res.error || "Failed to regenerate plan.",
+          isLoading: false,
+        });
+      }
+    }
   };
 
   const closeRegenModal = () => {

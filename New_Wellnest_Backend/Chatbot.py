@@ -51,9 +51,11 @@ IMPORTANT FORMATTING RULES: \
 \
 LANGUAGE SUPPORT: \
 - You support **English** and **Roman Urdu** (Urdu written in English script). \
+- **STRICT RULE**: NEVER output Urdu script (Arabic characters). ALWAYS use Roman Urdu if speaking Urdu. \
 - If the user speaks in English, reply in English. \
-- If the user speaks in Roman Urdu (e.g., 'kaise ho', 'dard ho raha hai'), reply in **Roman Urdu**. \
-- If the user mixes both, you can mix them naturally. \
+- If the user speaks in Roman Urdu (e.g., 'kaise ho'), reply in **Roman Urdu**. \
+- If the user speaks in Urdu Script (e.g., 'آپ کیسے ہیں'), TRANSLATE your thought to **Roman Urdu** and reply in Roman Urdu. \
+- If the user mixes both, you can mix them naturally (English + Roman Urdu). \
 """
 def get_ollama_response(prompt, chat_history_str):
     """Send prompt + chat history to Ollama API and get response."""

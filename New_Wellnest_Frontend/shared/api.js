@@ -112,12 +112,12 @@ export async function resetPassword(email, new_password) {
 // -------------------- WELLNESS PLAN --------------------
 const API_URL_WELLNESS = "http://localhost:5000/api/wellness";
 
-export async function generateWellnessPlan(email) {
+export async function generateWellnessPlan(email, regenerate = false) {
   try {
     const res = await fetch(`${API_URL_WELLNESS}/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, regenerate }),
     });
 
     const json = await res.json();
