@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import NutritionView from "./Nutrition.view.jsx";
 
@@ -126,15 +126,159 @@ export default function NutritionLogic(props) {
     },
   ]);
 
+  // --- Add Food Modal State & Logic ---
+  const [isAddFoodModalOpen, setIsAddFoodModalOpen] = useState(false);
+  const [selectedMealType, setSelectedMealType] = useState(null);
+  const [allFoodItems, setAllFoodItems] = useState([]); // Full list from API
+  const [filteredFoodItems, setFilteredFoodItems] = useState([]); // Filtered list for display
+  const [selectedSearchFood, setSelectedSearchFood] = useState(null); // For details view
+  const [searchServings, setSearchServings] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Fetch food items on mount
+  useEffect(() => {
+    const fetchFoodItems = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/nutrition/food-items");
+        if (response.ok) {
+          const data = await response.json();
+          setAllFoodItems(data);
+          setFilteredFoodItems(data);
+        } else {
+          console.error("Failed to fetch food items");
+        }
+      } catch (error) {
+        console.error("Error fetching food items:", error);
+      }
+    };
+
+    fetchFoodItems();
+  }, []);
+
+  // Update filtered list when search query changes
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredFoodItems(allFoodItems);
+    } else {
+      const lowerQuery = searchQuery.toLowerCase();
+      const filtered = allFoodItems.filter((item) =>
+        item.dish.toLowerCase().includes(lowerQuery)
+      );
+      setFilteredFoodItems(filtered);
+    }
+  }, [searchQuery, allFoodItems]);
+
+  const handleOpenAddFoodModal = (mealType) => {
+    setSelectedMealType(mealType);
+    setSearchQuery(""); // Reset search
+    setIsAddFoodModalOpen(true);
+  };
+
+  const handleCloseAddFoodModal = () => {
+    setIsAddFoodModalOpen(false);
+    setSelectedMealType(null);
+    setSelectedSearchFood(null); // Reset selection
+    setSearchServings(1);
+  };
+
+  const handleSelectFoodItem = (foodItem) => {
+    setSelectedSearchFood(foodItem);
+    setSearchServings(1);
+  };
+
+  const handleBackToSearch = () => {
+    setSelectedSearchFood(null);
+  };
+
+  const handleConfirmAddSearchFood = () => {
+    if (!selectedSearchFood) return;
+
+    const totalCalories = Math.round(selectedSearchFood.calories_kcal * searchServings);
+
+    // Update local state (meals)
+    setMeals((prevMeals) => {
+      const currentMeal = prevMeals[selectedMealType];
+      return {
+        ...prevMeals,
+        [selectedMealType]: {
+          ...currentMeal,
+          consumed: currentMeal.consumed + totalCalories,
+          items: [
+            ...currentMeal.items,
+            {
+              name: `${selectedSearchFood.dish} (${searchServings} serving${searchServings !== 1 ? 's' : ''})`,
+              calories: totalCalories
+            },
+          ],
+        },
+      };
+    });
+
+    // Update daily totals
+    setCalorieData(prev => ({
+      ...prev,
+      consumed: prev.consumed + totalCalories,
+      remaining: prev.remaining - totalCalories
+    }));
+
+    handleCloseAddFoodModal();
+  };
+
+  // --- Recommended Meal Modal State & Logic ---
+  const [isRecommendedModalOpen, setIsRecommendedModalOpen] = useState(false);
+  const [selectedRecommendedMeal, setSelectedRecommendedMeal] = useState(null);
+
+  const handleAddRecommendedMeal = (mealId) => {
+    const meal = recommendedMeals.find(m => m.id === mealId);
+    if (meal) {
+      setSelectedRecommendedMeal(meal);
+      setIsRecommendedModalOpen(true);
+    }
+  };
+
+  const handleCloseRecommendedModal = () => {
+    setIsRecommendedModalOpen(false);
+    setSelectedRecommendedMeal(null);
+  };
+
+  const handleConfirmAddRecommendedMeal = (mealType, servings) => {
+    if (!selectedRecommendedMeal) return;
+
+    const totalCalories = Math.round(selectedRecommendedMeal.calories * servings);
+
+    // Update local state (meals)
+    setMeals((prevMeals) => {
+      const currentMeal = prevMeals[mealType];
+      return {
+        ...prevMeals,
+        [mealType]: {
+          ...currentMeal,
+          consumed: currentMeal.consumed + totalCalories,
+          items: [
+            ...currentMeal.items,
+            {
+              name: `${selectedRecommendedMeal.name} (${servings} serving${servings !== 1 ? 's' : ''})`,
+              calories: totalCalories
+            },
+          ],
+        },
+      };
+    });
+
+    // Update daily totals
+    setCalorieData(prev => ({
+      ...prev,
+      consumed: prev.consumed + totalCalories,
+      remaining: prev.remaining - totalCalories
+    }));
+
+    handleCloseRecommendedModal();
+  };
+
   // Functions to handle meal actions (ready for API integration)
   const handleAddFood = (mealType) => {
     // Placeholder for API call
     console.log(`Add food to ${mealType}`);
-  };
-
-  const handleAddRecommendedMeal = (mealId, mealType) => {
-    // Placeholder for API call
-    console.log(`Add recommended meal ${mealId} to ${mealType}`);
   };
 
   return (
@@ -149,8 +293,29 @@ export default function NutritionLogic(props) {
         onResetWater={resetWaterIntake}
         meals={meals}
         recommendedMeals={recommendedMeals}
-        onAddFood={handleAddFood}
+        onAddFood={handleOpenAddFoodModal} // Changed to open modal
         onAddRecommendedMeal={handleAddRecommendedMeal}
+
+        // New props for Modal
+        isAddFoodModalOpen={isAddFoodModalOpen}
+        onCloseAddFoodModal={handleCloseAddFoodModal}
+        selectedMealType={selectedMealType}
+        foodItems={filteredFoodItems}
+        onSearchFood={setSearchQuery}
+        searchQuery={searchQuery}
+        onSelectFoodItem={handleSelectFoodItem}
+        selectedSearchFood={selectedSearchFood}
+        searchServings={searchServings}
+        onSetSearchServings={setSearchServings}
+        onBackToSearch={handleBackToSearch}
+        onConfirmAddSearchFood={handleConfirmAddSearchFood}
+
+        // New props for Recommended Modal
+        isRecommendedModalOpen={isRecommendedModalOpen}
+        onCloseRecommendedModal={handleCloseRecommendedModal}
+        selectedRecommendedMeal={selectedRecommendedMeal}
+        onConfirmAddRecommendedMeal={handleConfirmAddRecommendedMeal}
+
         {...props}
       />
     </Layout>

@@ -46,8 +46,27 @@ export default function LoginLogic(props) {
           // ✅ store user info in context
           setUser({ email: form.email });
 
-          // Navigate to main/home page after successful login
-          navigate("/form"); 
+          // Check if profile exists
+          try {
+            // We need to use full URL for fetch unless proxied, assumed localhost:5000 based on previous code
+            const profileRes = await fetch(`http://localhost:5000/api/profile/get/${form.email}`);
+            if (profileRes.ok) {
+              // Profile exists (200) -> Dashboard
+              navigate("/dashboard");
+            } else {
+              // Profile missing (404) -> Form
+              navigate("/form");
+            }
+          } catch (e) {
+            // Fallback on error -> Dashboard (safer?) or Form? 
+            // Logic says if error, assume user needs to check things or normal flow.
+            // Let's default to dashboard to avoid trapping users if server errs on profile check?
+            // Or Form if key data needed? User said "redirected to the Form page whenever they log in" IF not entered.
+            // If error checking, maybe Form is safer to ensure data? 
+            // Let's assume Profile Check works. If fail, log and go Dashboard to be safe.
+            console.error("Profile check failed", e);
+            navigate("/dashboard");
+          }
         }
       } else {
         alert("Unexpected response from server.");

@@ -4,9 +4,12 @@ import { toast } from "@/hooks/use-toast.js";
 import { Tooltip, TooltipTrigger, TooltipContent } from "../components/ui/tooltip.jsx";
 import { Activity, Heart, Zap, Target, Apple } from "lucide-react";
 import { useUser } from "../../shared/UserContext";
+import { generateWellnessPlan } from "../../shared/api";
+import { useNavigate } from "react-router-dom";
 
 export default function Form() {
   const { user } = useUser();
+  const navigate = useNavigate();
   const userEmail = user?.email;
 
   const [form, setForm] = useState({
@@ -112,6 +115,16 @@ export default function Form() {
 
       if (res.ok) {
         toast({ title: "Profile saved", description: data.message || "Your details have been saved." });
+
+        // Trigger Plan Generation (Asynchronous - "While generated")
+        console.log("Triggering wellness plan generation...");
+        generateWellnessPlan(userEmail).then(planRes => {
+          console.log("Plan generation triggered:", planRes);
+        });
+
+        // Redirect immediately to Dashboard
+        setTimeout(() => navigate("/dashboard"), 500);
+
       } else {
         toast({ title: "Error", description: data.message || "Failed to save profile." });
       }
@@ -335,11 +348,10 @@ export default function Form() {
                       key={goal}
                       type="button"
                       onClick={() => handleMainGoalChange(goal)}
-                      className={`px-4 py-3 rounded-lg font-medium transition-colors text-sm ${
-                        form.mainGoal === goal
-                          ? "bg-indigo-100 text-indigo-700 border border-indigo-300"
-                          : "bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-150"
-                      }`}
+                      className={`px-4 py-3 rounded-lg font-medium transition-colors text-sm ${form.mainGoal === goal
+                        ? "bg-indigo-100 text-indigo-700 border border-indigo-300"
+                        : "bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-150"
+                        }`}
                     >
                       {goal}
                     </button>

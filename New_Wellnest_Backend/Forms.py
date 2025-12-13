@@ -6,7 +6,7 @@ import sqlite3
 health_bp = Blueprint('health', __name__)
 CORS(health_bp, resources={r"/*": {"origins": "http://localhost:8080"}}, supports_credentials=True)
 
-DB_PATH = "./Wellnest_Database.db"
+DB_PATH = "./New_Wellnest_Backend/Wellnest_Database.db"
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -53,7 +53,7 @@ def save_health_form():
             data.get("medical"),
             data.get("allergies"),
             float(data.get("sleep") or 0),
-            float(data.get("workHours") or 0),
+            data.get("workHours"),
             int(data.get("stress") or 0),
             data.get("mainGoal"),
             data.get("secondaryGoals"),
@@ -97,7 +97,7 @@ def save_health_form():
                 data.get("medical"),
                 data.get("allergies"),
                 float(data.get("sleep") or 0),
-                float(data.get("workHours") or 0),
+                data.get("workHours"),
                 int(data.get("stress") or 0),
                 data.get("mainGoal"),
                 data.get("secondaryGoals"),

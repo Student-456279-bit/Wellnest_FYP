@@ -108,3 +108,27 @@ export async function resetPassword(email, new_password) {
     return { error: err.message };
   }
 }
+
+// -------------------- WELLNESS PLAN --------------------
+const API_URL_WELLNESS = "http://localhost:5000/api/wellness";
+
+export async function generateWellnessPlan(email) {
+  try {
+    const res = await fetch(`${API_URL_WELLNESS}/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    const json = await res.json();
+    // 409 is acceptable (Plan exists), so treat 200 and 409 as success for fetching data
+    if (!res.ok && res.status !== 409) {
+      return { error: json.message || json.error || `HTTP ${res.status}` };
+    }
+
+    return json;
+  } catch (err) {
+    console.error("Wellness Plan API call failed:", err);
+    return { error: err.message };
+  }
+}

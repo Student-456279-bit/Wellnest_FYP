@@ -3,6 +3,8 @@ from flask_cors import CORS
 from AuthUsers import auth_bp
 from Forgor import forgor_bp
 from Forms import health_bp  # This is your updated health backend
+from Nutrition import nutrition_bp
+from Chatbot import chatbot_bp
 
 app = Flask(__name__)
 
@@ -13,6 +15,11 @@ CORS(app, resources={r"/*": {"origins": "http://localhost:8080"}}, supports_cred
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(forgor_bp, url_prefix='/api/forgor')
 app.register_blueprint(health_bp, url_prefix='/api/profile')
+app.register_blueprint(nutrition_bp, url_prefix='/api/nutrition')
+app.register_blueprint(chatbot_bp, url_prefix='/api/chatbot')
+
+from WellnessPlan import wellness_bp
+app.register_blueprint(wellness_bp, url_prefix='/api/wellness')
 
 @app.route('/')
 def home():

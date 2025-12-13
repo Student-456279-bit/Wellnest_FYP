@@ -1,17 +1,20 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import AnalyticsView from "./Analytics.view.jsx";
 
 export default function AnalyticsLogic(props) {
+  const navigate = useNavigate();
   // Any data fetching for the entire analytics page would happen here.
   // For example, fetching all user wellness data from an API.
-  const analyticsData = {
+  // Analytics State
+  const [analyticsData, setAnalyticsData] = React.useState({
     currentStreak: 14,
     weeklyRate: 86,
     wellnessScore: 78,
     activeGoals: { completed: 8, total: 10 },
     nutrition: {
-      caloriesMet: 67, // Example percentage
+      caloriesMet: 67,
       balancedScore: 92,
       goalAchievement: 86,
       trendData: [
@@ -22,7 +25,7 @@ export default function AnalyticsLogic(props) {
       totalWorkouts: 12,
       activeMinutes: 340,
       goalAchievement: 95,
-      barsData: [20, 35, 30, 45, 40, 50, 25], // Example bar heights
+      barsData: [20, 35, 30, 45, 40, 50, 25],
     },
     mindfulness: {
       meditationMinutes: 180,
@@ -34,19 +37,19 @@ export default function AnalyticsLogic(props) {
       data: [70, 75, 73, 78, 80, 82, 85],
     },
     weeklyGoalHitRate: {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        data: [80, 90, 70, 85, 60, 95, 80],
-        average: 83
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      data: [80, 90, 70, 85, 60, 95, 80],
+      average: 83
     },
     averageEnergyLevel: {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        data: [7, 8, 7.5, 9, 8, 9.5, 9],
-        average: 7.6
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      data: [7, 8, 7.5, 9, 8, 9.5, 9],
+      average: 7.6
     },
     mindBodyBalance: {
-        labels: ['W1', 'W2', 'W3', 'W4'],
-        data: [60, 70, 75, 85],
-        current: 85
+      labels: ['W1', 'W2', 'W3', 'W4'],
+      data: [60, 70, 75, 85],
+      current: 85
     },
     monthlyGoals: 73,
     ranking: 18,
@@ -55,12 +58,79 @@ export default function AnalyticsLogic(props) {
       "You skip nutrition goals mostly on weekends",
       "Activity improved 15% from last week."
     ],
-    // ... other data
+  });
+
+  // Modal State Management
+  const [modalState, setModalState] = React.useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    isLoading: false,
+  });
+
+  const closeModal = () => {
+    setModalState({ ...modalState, isOpen: false });
+  };
+
+  // Button Handlers
+  const handleUpdateActivity = () => {
+    // Show updating modal
+    setModalState({
+      isOpen: true,
+      title: "Updating Activity",
+      message: "Syncing your latest activity data... please wait.",
+      isLoading: true
+    });
+
+    // Simulate 3s delay then reload
+    setTimeout(() => {
+      window.location.reload();
+    }, 3000);
+  };
+
+  const handleReturnToDashboard = () => {
+    navigate("/dashboard");
+  };
+
+  const handleModifyGoalPlan = () => {
+    setModalState({
+      isOpen: true,
+      title: "Modify Goal Plan",
+      message: "Regenerating the goal plan is not implemented yet. Do you want to go to the Goals page instead?",
+      isLoading: false,
+      confirmText: "Yes, go to Goals",
+      cancelText: "No, stay here",
+      onConfirm: () => {
+        navigate("/goals");
+        setModalState(curr => ({ ...curr, isOpen: false }));
+      },
+      onCancel: () => {
+        setModalState(curr => ({ ...curr, isOpen: false }));
+      }
+    });
+  };
+
+  const handleViewGoalProgress = () => {
+    navigate("/goals");
+  };
+
+  const handleAskWellnessAI = () => {
+    navigate("/wellnest-ai-chatbot");
   };
 
   return (
     <Layout>
-      <AnalyticsView {...props} data={analyticsData} />
+      <AnalyticsView
+        data={analyticsData}
+        onUpdateActivity={handleUpdateActivity}
+        onReturnToDashboard={handleReturnToDashboard}
+        onModifyGoalPlan={handleModifyGoalPlan}
+        onViewGoalProgress={handleViewGoalProgress}
+        onAskWellnessAI={handleAskWellnessAI}
+        modalState={modalState}
+        closeModal={closeModal}
+        {...props}
+      />
     </Layout>
   );
 }

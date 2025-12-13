@@ -24,7 +24,9 @@ import Goals from "./pages/Goals";
 import WellnestAiChatbot from "./pages/WellnestAiChatbot";
 import Analytics from "./pages/Analytics";
 import Journal from "./pages/Journal";
+const JournalEntry = lazy(() => import("./pages/JournalEntry.logic.jsx"));
 import Meditation from "./pages/Meditation";
+const MeditationSession = lazy(() => import("./pages/MeditationSession.logic.jsx"));
 import NotFound from "./pages/NotFound";
 
 // ✅ Import UserProvider
@@ -57,8 +59,24 @@ const App = () => (
             <Route path="/goals" element={<Goals />} />
             <Route path="/wellnest-ai-chatbot" element={<WellnestAiChatbot />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="/journal" element={<Journal />} />
+            <Route path="/journal/new" element={
+              <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+                <JournalEntry />
+              </Suspense>
+            } />
+            <Route path="/journal/entry/:id" element={
+              <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+                <JournalEntry />
+              </Suspense>
+            } />
             <Route path="/meditation" element={<Meditation />} />
+            <Route path="/meditation/session/:id" element={
+              <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+                <MeditationSession />
+              </Suspense>
+            } />
             <Route path="/workout" element={<Workout />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

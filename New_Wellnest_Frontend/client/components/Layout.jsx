@@ -1,18 +1,31 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, Settings, LogOut } from "lucide-react";
-
-// PLACE A: Add the import here
+import GlobalChatWidget from "./GlobalChatWidget.jsx";
 import { useUser } from "../../shared/UserContext.jsx";
 
 export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const mainPagePaths = ["/form", "/dashboard", "/nutrition", "/goals", "/wellnest-ai-chatbot", "/analytics", "/journal", "/meditation","/workout"];
-  const isMaintPage = mainPagePaths.includes(location.pathname);
+  const mainPagePaths = ["/form", "/dashboard", "/nutrition", "/goals", "/wellnest-ai-chatbot", "/analytics", "/journal", "/meditation", "/workout"];
+  const isMaintPage = mainPagePaths.includes(location.pathname) || location.pathname.startsWith("/journal/") || location.pathname.startsWith("/meditation/");
+
+  // CONFIGURATION: Define which pages should show the Global Chatbot Widget
+  const chatbotVisiblePaths = [
+    "/dashboard",
+    "/nutrition",
+    "/goals",
+    "/analytics",
+    "/journal",
+    "/meditation",
+    "/workout",
+    // Note: Excluded "/wellnest-ai-chatbot" to avoid redundancy
+  ];
+  const showChatbot = chatbotVisiblePaths.includes(location.pathname) || location.pathname.startsWith("/journal/") || location.pathname.startsWith("/meditation/");
+
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
-  const { user, logout } = useUser(); 
+  const { user, logout } = useUser();
   const userNameDisplay = user ? (user.name || user.email || 'Wellnest User') : 'Demo User';
 
   const handleLogout = () => {
@@ -48,10 +61,13 @@ export default function Layout({ children }) {
                 {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
 
-              <div className="flex-shrink-0">
+              <button
+                onClick={() => navigateToPage("/dashboard")}
+                className="flex-shrink-0 text-left hover:opacity-90 transition-opacity"
+              >
                 <h1 className="text-2xl font-extrabold">Wellnest</h1>
                 <p className="text-xs opacity-90">Your Calm Digital space</p>
-              </div>
+              </button>
               <div className="hidden sm:block text-sm opacity-90">Connect. Grow. Thrive — All in One Place</div>
             </div>
 
@@ -81,100 +97,82 @@ export default function Layout({ children }) {
           <div className="flex flex-1">
             {/* Sidebar */}
             <aside
-              className={`fixed md:relative left-0 top-16 md:top-0 h-[calc(100vh-64px)] md:h-auto z-50 w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out ${
-                sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 md:w-0 md:hidden"
-              } md:flex md:flex-col`}
+              className={`fixed md:relative left-0 top-16 md:top-0 h-[calc(100vh-64px)] md:h-auto z-50 w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0 md:w-0 md:hidden"
+                } md:flex md:flex-col`}
             >
               <div className="flex flex-col h-full md:pt-4 pb-4 px-4">
                 {/* Navigation Links */}
                 <nav className="flex-1 space-y-2">
                   <button
                     onClick={() => navigateToPage("/dashboard")}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                      location.pathname === "/dashboard"
-                        ? "bg-indigo-600 text-white font-medium"
-                        : "hover:bg-slate-800"
-                    }`}
+                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${location.pathname === "/dashboard"
+                      ? "bg-indigo-600 text-white font-medium"
+                      : "hover:bg-slate-800"
+                      }`}
                   >
                     Dashboard
                   </button>
-                  <button
-                    onClick={() => navigateToPage("/form")}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                      location.pathname === "/form"
-                        ? "bg-indigo-600 text-white font-medium"
-                        : "hover:bg-slate-800"
-                    }`}
-                  >
-                    Form
-                  </button>
+
                   <button
                     onClick={() => navigateToPage("/nutrition")}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                      location.pathname === "/nutrition"
-                        ? "bg-indigo-600 text-white font-medium"
-                        : "hover:bg-slate-800"
-                    }`}
+                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${location.pathname === "/nutrition"
+                      ? "bg-indigo-600 text-white font-medium"
+                      : "hover:bg-slate-800"
+                      }`}
                   >
                     Nutrition
                   </button>
                   <button
                     onClick={() => navigateToPage("/goals")}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                      location.pathname === "/goals"
-                        ? "bg-indigo-600 text-white font-medium"
-                        : "hover:bg-slate-800"
-                    }`}
+                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${location.pathname === "/goals"
+                      ? "bg-indigo-600 text-white font-medium"
+                      : "hover:bg-slate-800"
+                      }`}
                   >
                     Goals
                   </button>
                   <button
                     onClick={() => navigateToPage("/wellnest-ai-chatbot")}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                      location.pathname === "/wellnest-ai-chatbot"
-                        ? "bg-indigo-600 text-white font-medium"
-                        : "hover:bg-slate-800"
-                    }`}
+                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${location.pathname === "/wellnest-ai-chatbot"
+                      ? "bg-indigo-600 text-white font-medium"
+                      : "hover:bg-slate-800"
+                      }`}
                   >
                     Wellnest Ai Chatbot
                   </button>
                   <button
                     onClick={() => navigateToPage("/analytics")}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                      location.pathname === "/analytics"
-                        ? "bg-indigo-600 text-white font-medium"
-                        : "hover:bg-slate-800"
-                    }`}
+                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${location.pathname === "/analytics"
+                      ? "bg-indigo-600 text-white font-medium"
+                      : "hover:bg-slate-800"
+                      }`}
                   >
                     Analytics
                   </button>
                   <button
                     onClick={() => navigateToPage("/journal")}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                      location.pathname === "/journal"
-                        ? "bg-indigo-600 text-white font-medium"
-                        : "hover:bg-slate-800"
-                    }`}
+                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${location.pathname.startsWith("/journal")
+                      ? "bg-indigo-600 text-white font-medium"
+                      : "hover:bg-slate-800"
+                      }`}
                   >
                     Journal
                   </button>
                   <button
                     onClick={() => navigateToPage("/meditation")}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                      location.pathname === "/meditation"
-                        ? "bg-indigo-600 text-white font-medium"
-                        : "hover:bg-slate-800"
-                    }`}
+                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${location.pathname.startsWith("/meditation")
+                      ? "bg-indigo-600 text-white font-medium"
+                      : "hover:bg-slate-800"
+                      }`}
                   >
                     Meditation
                   </button>
                   <button
                     onClick={() => navigateToPage("/workout")}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                      location.pathname === "/workout"
-                        ? "bg-indigo-600 text-white font-medium"
-                        : "hover:bg-slate-800"
-                    }`}
+                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${location.pathname === "/workout"
+                      ? "bg-indigo-600 text-white font-medium"
+                      : "hover:bg-slate-800"
+                      }`}
                   >
                     Workout
                   </button>
@@ -186,7 +184,7 @@ export default function Layout({ children }) {
                     onClick={handleNavigateToSettings}
                     className="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition-colors flex items-center gap-2"
                   >
-                    
+
                     <Settings size={18} />
                     Settings
                   </button>
@@ -247,6 +245,9 @@ export default function Layout({ children }) {
 
       {/* Small footer bar */}
       <div className="w-full bg-left-blob text-white text-center py-2 text-sm">Footer</div>
+
+      {/* Global Chat Widget */}
+      {showChatbot && <GlobalChatWidget />}
     </div>
   );
 }

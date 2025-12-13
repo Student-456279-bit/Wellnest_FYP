@@ -1,0 +1,156 @@
+dish,calories_kcal,protein_g,carbs_g,fat_g,pakistani_cuisine,is_vegetarian,macro_quality
+Chicken Biryani,483,10.1,68.1,20.7,True,False,balanced
+Beef Biryani,430,12.1,15.4,26.2,True,False,balanced
+Mutton Biryani,325,34.8,35.5,24.6,True,False,high_protein
+Vegetable Biryani,580,18.9,20.1,25.6,True,True,high_protein
+Sindhi Biryani,407,15.0,29.9,20.7,True,True,high_protein
+Pulao,268,15.2,68.6,5.7,True,True,high_protein
+Beef Pulao,182,23.9,41.9,5.0,True,False,high_protein
+Mutton Pulao,595,22.7,60.6,14.4,True,False,high_protein
+Chicken Pulao,578,15.5,27.8,6.0,True,False,high_protein
+Plain Rice,272,11.8,58.2,13.2,False,True,balanced
+Chapati (Roti),334,32.5,29.3,3.1,True,True,high_protein
+Paratha,625,23.8,62.2,19.0,True,True,high_protein
+Aloo Paratha,516,3.2,56.1,19.3,True,True,low_protein
+Chicken Paratha,291,34.1,54.1,32.6,True,False,high_protein
+Lachha Paratha,327,29.0,34.7,30.5,True,True,high_protein
+Naan,289,3.9,37.7,34.3,False,True,low_protein
+Garlic Naan,648,6.1,8.2,14.9,False,True,low_protein
+Kalwanji Naan,514,31.8,61.8,14.7,False,True,high_protein
+Tandoori Roti,517,27.6,31.8,18.1,True,True,high_protein
+Poori,313,12.6,55.9,27.9,False,True,balanced
+Haleem,185,6.2,20.1,32.3,True,True,low_protein
+Chicken Haleem,438,32.1,27.8,29.6,True,False,high_protein
+Beef Haleem,281,11.7,50.7,30.1,True,False,balanced
+Mutton Haleem,553,12.5,61.2,29.0,True,False,balanced
+Khichdi,419,24.9,37.9,24.1,False,True,high_protein
+Nihari,191,21.1,20.8,18.7,True,True,high_protein
+Beef Nihari,590,12.2,39.5,17.0,True,False,balanced
+Mutton Nihari,258,22.4,36.7,33.7,True,False,high_protein
+Chicken Nihari,394,21.2,65.5,15.2,True,False,high_protein
+Paya,628,21.8,45.7,18.3,False,True,high_protein
+Chicken Karahi,256,31.2,35.4,9.1,True,False,high_protein
+Mutton Karahi,367,34.6,69.9,15.0,True,False,high_protein
+Beef Karahi,324,20.7,40.3,20.2,True,False,high_protein
+White Karahi,316,16.3,14.4,9.3,True,True,high_protein
+Peshawari Karahi,511,3.4,6.2,33.6,True,True,low_protein
+Chicken Handi,382,16.0,51.6,4.6,False,False,high_protein
+Makhni Handi,437,6.9,39.2,13.1,False,True,low_protein
+Paneer Handi,528,19.3,56.9,20.6,False,True,high_protein
+Malai Boti,370,28.7,47.2,16.8,False,True,high_protein
+Chicken Tikka,617,4.5,66.4,12.9,True,False,low_protein
+Beef Tikka,365,12.6,44.5,11.6,True,False,balanced
+Chicken Seekh Kabab,628,19.0,61.3,34.3,False,False,high_protein
+Beef Seekh Kabab,331,26.9,61.9,13.9,False,False,high_protein
+Chapli Kabab,563,21.1,32.5,30.7,False,True,high_protein
+Shami Kabab,303,34.5,68.0,2.0,False,True,high_protein
+Aloo Keema,283,30.2,48.6,17.7,False,True,high_protein
+Matar Keema,222,33.1,5.7,7.1,False,True,high_protein
+Keema Fry,645,18.2,45.0,10.4,False,True,high_protein
+Keema Paratha,240,5.3,50.7,5.8,True,True,low_protein
+Daal Chawal,354,12.3,12.1,30.9,True,True,balanced
+Daal Fry,455,7.9,47.1,31.4,True,True,balanced
+Daal Mash,487,9.5,35.1,6.5,True,True,balanced
+Daal Moong,616,6.4,9.3,14.6,True,True,low_protein
+Daal Masoor,258,33.5,23.2,8.9,True,True,high_protein
+Daal Chana,532,23.7,41.9,7.0,True,True,high_protein
+Chicken Korma,304,33.0,56.1,7.1,False,False,high_protein
+Beef Korma,333,12.2,64.5,29.3,False,False,balanced
+Mutton Korma,252,30.7,37.2,33.8,False,False,high_protein
+Qeema Korma,192,9.8,31.6,7.2,False,True,balanced
+Aloo Gosht,230,22.4,21.6,14.8,False,True,high_protein
+Bhindi Masala,583,27.7,36.6,16.2,False,True,high_protein
+Aloo Gobi,432,29.4,46.7,31.2,False,True,high_protein
+Aloo Baingan,431,4.7,51.6,18.2,False,True,low_protein
+Mixed Sabzi,641,26.2,13.9,32.1,False,True,high_protein
+Palak Gosht,435,21.6,18.4,28.0,False,True,high_protein
+Sarson Ka Saag,359,13.8,61.6,9.0,False,True,balanced
+Palak Paneer,150,13.5,34.0,32.9,False,True,balanced
+Chana Masala,554,23.7,23.6,25.8,False,True,high_protein
+Rajma,477,8.4,16.8,12.9,False,True,balanced
+Kadhi Pakora,531,7.6,64.3,14.2,False,True,balanced
+Samosa (Aloo),220,14.1,29.0,27.7,False,True,balanced
+Samosa (Keema),401,33.5,37.3,24.3,False,True,high_protein
+Pakora Mix,187,33.8,17.4,5.5,False,True,high_protein
+Chicken Roll,581,21.9,30.2,4.4,False,False,high_protein
+Spring Roll,543,19.3,28.1,17.6,False,True,high_protein
+Chapli Burger,559,25.9,7.0,34.1,False,True,high_protein
+Anday Wala Burger,168,6.1,44.0,20.5,False,True,low_protein
+Aloo Tikki,434,33.6,30.5,21.4,False,True,high_protein
+Gol Gappay,308,32.0,28.0,11.6,False,True,high_protein
+Dahi Bhallay,336,14.7,16.4,29.8,False,True,balanced
+Chaat Papri,553,30.8,32.5,32.3,False,True,high_protein
+Chicken Shawarma,495,30.3,45.3,5.4,False,False,high_protein
+Beef Shawarma,353,6.1,46.8,21.1,False,False,low_protein
+Shawarma Plate,290,31.7,45.5,25.1,False,True,high_protein
+Fries,275,30.4,50.9,6.0,False,True,high_protein
+Zinger Burger,359,31.5,67.6,5.5,False,True,high_protein
+Chicken Burger,182,5.9,6.4,26.6,False,False,low_protein
+Beef Burger,518,7.1,48.0,2.9,False,False,balanced
+Club Sandwich,155,30.5,11.1,13.4,False,True,high_protein
+Chicken Sandwich,531,19.2,34.7,22.6,False,False,high_protein
+Qeema Naan,572,23.2,22.0,27.5,False,True,high_protein
+Cheese Naan,441,21.5,31.0,26.0,False,True,high_protein
+Chicken Cheese Paratha,403,29.2,45.2,12.1,True,False,high_protein
+Aloo Cutlet,647,13.1,47.2,17.4,False,True,balanced
+Fish Fry,253,3.1,45.4,28.7,False,False,low_protein
+Grilled Fish,218,25.2,15.0,22.3,False,False,high_protein
+Finger Fish,335,11.0,62.7,2.0,False,False,balanced
+Prawn Karahi,456,33.0,18.3,8.2,True,True,high_protein
+Prawn Biryani,185,5.6,43.3,16.3,True,True,low_protein
+Prawn Masala,647,12.1,67.2,26.6,False,True,balanced
+Fish Biryani,617,10.7,35.5,27.2,True,False,balanced
+Katakat,489,3.8,41.4,26.5,False,True,low_protein
+Liver Fry,520,30.2,11.0,34.3,False,True,high_protein
+Brain Masala,598,29.9,48.3,24.1,False,True,high_protein
+Chicken Jalfrezi,192,17.6,14.6,17.0,False,False,high_protein
+Beef Jalfrezi,565,3.2,29.9,18.5,False,False,low_protein
+Tandoori Chicken,170,16.5,63.1,18.8,False,False,high_protein
+Fried Chicken,251,18.3,52.1,30.8,False,False,high_protein
+Chicken Wings,166,11.4,48.5,25.7,False,False,balanced
+Masala Fries,254,28.7,23.3,11.7,False,True,high_protein
+Chicken Pasta,531,4.1,65.2,19.1,False,False,low_protein
+White Sauce Pasta,240,26.8,6.5,25.5,False,True,high_protein
+Red Sauce Pasta,441,29.2,15.5,8.0,False,True,high_protein
+Chicken Macaroni,392,19.8,45.9,14.8,False,False,high_protein
+Veg Macaroni,192,32.8,23.6,19.8,False,True,high_protein
+Kheer,266,33.2,52.9,33.0,False,True,high_protein
+Firni,586,3.7,6.9,33.2,False,True,low_protein
+Gulab Jamun,431,11.8,56.9,27.5,False,True,balanced
+Jalebi,644,19.6,22.7,20.2,False,True,high_protein
+Ras Malai,593,26.7,33.4,23.4,False,True,high_protein
+Gajar Ka Halwa,640,8.6,69.0,14.8,False,True,balanced
+Suji Ka Halwa,276,8.6,53.8,9.1,False,True,balanced
+Doodh Dulari,596,12.9,16.3,32.9,False,True,balanced
+Fruit Trifle,297,24.9,35.1,9.4,False,True,high_protein
+Kulfi,286,7.3,39.2,27.3,False,True,balanced
+Mango Ice Cream,357,24.5,69.8,4.4,False,True,high_protein
+Vanilla Ice Cream,405,26.6,5.4,24.6,False,True,high_protein
+Falooda,501,12.6,29.9,16.2,False,True,balanced
+Qulfi Falooda,385,21.0,42.0,17.0,False,True,high_protein
+Rabri,455,28.7,15.3,6.2,False,True,high_protein
+Lassi (Sweet),359,18.4,66.9,27.4,False,True,high_protein
+Lassi (Salted),324,34.0,34.5,20.5,False,True,high_protein
+Doodh Patti,239,22.5,18.4,32.4,False,True,high_protein
+Kashmiri Chai,433,24.2,13.9,25.0,False,True,high_protein
+Sulaimani Chai,401,32.1,24.2,22.8,False,True,high_protein
+Channa Pulao,345,6.6,32.4,16.0,True,True,low_protein
+Chicken Shorba,363,12.7,11.3,4.0,False,False,balanced
+Mutton Shorba,207,17.9,66.5,27.1,False,False,high_protein
+Beef Shorba,414,11.0,8.0,7.9,False,False,balanced
+Yakhni Pulao,386,13.7,58.4,27.1,True,True,balanced
+Tikka Boti,533,28.6,67.2,4.0,True,True,high_protein
+Reshmi Kabab,518,17.9,10.1,22.9,False,True,high_protein
+Bihari Kabab,213,26.8,22.1,31.3,False,True,high_protein
+Afghani Kabab,388,30.6,32.3,25.9,False,True,high_protein
+Fish Kabab,617,22.6,68.8,28.5,False,False,high_protein
+Aloo Chaat,239,31.3,12.2,2.5,False,True,high_protein
+Fruit Chaat,535,26.9,57.1,6.9,False,True,high_protein
+Cream Chaat,609,18.1,63.9,22.0,False,True,high_protein
+Bhel Puri,277,19.7,12.3,14.7,False,True,high_protein
+Sev Puri,293,25.6,12.5,31.3,False,True,high_protein
+Halwa Puri Plate,304,13.1,9.6,20.1,False,True,balanced
+Anda Chawal,321,30.6,32.1,17.3,False,True,high_protein
+Chicken Chawal,424,21.9,28.3,3.5,False,False,high_protein
+Beef Chawal,406,21.4,31.1,23.6,False,False,high_protein
+Anda Paratha,176,22.1,39.5,19.8,True,True,high_protein

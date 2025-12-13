@@ -1,8 +1,16 @@
 import React, { useState } from "react";
 import Layout from "../components/Layout";
 import GoalsView from "./Goals.view.jsx";
+import { useNavigate } from "react-router-dom";
+
+import { generateWellnessPlan } from "../../shared/api.js";
+import { useUser } from "../../shared/UserContext.jsx";
 
 export default function GoalsLogic(props) {
+  const navigate = useNavigate();
+  // Get User Context
+  const { user } = useUser();
+
   // Weekly progress state
   const [weeklyProgress, setWeeklyProgress] = useState({
     daysCompleted: 6,
@@ -18,75 +26,249 @@ export default function GoalsLogic(props) {
     ],
   });
 
-  // Goals state
+  // Goals state - Fixed 5 Major Categories
   const [goals, setGoals] = useState([
     {
       id: 1,
-      name: "Daily Meditation Practice",
-      description: "Cure Mindstate for 10 minutes every day to enhance focus and reduce stress",
-      target: "Target: 10min",
+      name: "Meditation or Praying",
+      description: "Take time to reflect and find inner peace",
+      target: "15 min",
+      current: "0 min",
+      unit: "min",
       icon: "🧘",
       badgeColor: "bg-purple-100 text-purple-700",
-      feeling: "Feeling so hard? Should We Plan",
+      feeling: "Not started yet",
+      priority: "Medium",
       completed: false,
     },
     {
       id: 2,
-      name: "Weekly Exercise Routine",
-      description: "Cure Mindstate for 30 minutes every day to enhance focus and reduce stress",
-      target: "Target: 30min",
+      name: "Daily Exercise",
+      description: "Move your body to stay healthy and active",
+      target: "30 min",
+      current: "0 min",
+      unit: "min",
       icon: "💪",
       badgeColor: "bg-green-100 text-green-700",
-      feeling: "Feeling so hard? Should We Plan",
+      feeling: "Ready to go",
+      priority: "High",
       completed: false,
     },
     {
       id: 3,
-      name: "Evening Journaling",
-      description: "Cure Write a 5 study entries practice to enhance focus and reduce stress behind that",
-      target: "Target: 5min",
-      icon: "📔",
-      badgeColor: "bg-blue-100 text-blue-700",
-      feeling: "Feeling so hard? Should We Plan",
+      name: "Food Intake",
+      description: "Eat balanced meals with emphasis on greens",
+      target: "2000 kcal",
+      current: "0 kcal",
+      unit: "kcal",
+      icon: "🥗",
+      badgeColor: "bg-orange-100 text-orange-700",
+      feeling: "Hungry",
+      priority: "Medium",
       completed: false,
     },
     {
       id: 4,
-      name: "Balanced Nutrition",
-      description: "Goal: Eat 3-5 healthy and vegetables meals and balanced reaches",
-      target: "Target: 5 EA",
-      icon: "🥗",
-      badgeColor: "bg-orange-100 text-orange-700",
-      feeling: "Feeling so hard? Should We Plan",
+      name: "Water Intake",
+      description: "Stay hydrated throughout the day",
+      target: "2500 ml",
+      current: "500 ml",
+      unit: "ml",
+      icon: "💧",
+      badgeColor: "bg-blue-100 text-blue-700",
+      feeling: "Thirsty",
+      priority: "Low",
       completed: false,
     },
     {
       id: 5,
-      name: "Consistent Sleep Schedule",
-      description: "Goal: Go to bed by 10 PM and wake up by 6 AM for 8 hours of sound sleep",
-      target: "Target: 8hrs",
+      name: "Sleep Schedule",
+      description: "Get enough rest for recovery",
+      target: "8 hrs",
+      current: "0 hrs",
+      unit: "hrs",
       icon: "😴",
-      badgeColor: "bg-sky-100 text-sky-700",
-      feeling: "Feeling so hard? Should We Plan",
+      badgeColor: "bg-indigo-100 text-indigo-700",
+      feeling: "Tired",
+      priority: "High",
       completed: false,
     },
   ]);
 
-  // Mark goal as done
+  // Fetch Wellness Plan on Mount
+  React.useEffect(() => {
+    async function fetchPlan() {
+      if (!user || !user.email) return;
+
+      console.log("Fetching wellness plan for:", user.email);
+      const res = await generateWellnessPlan(user.email);
+
+      if (res && res.plan) {
+        console.log("Plan fetched:", res.plan);
+        const p = res.plan;
+
+        // Helper to extract number from string like "20 mins" -> 20
+        const parseNum = (str) => parseInt(str) || 0;
+
+        // Calculate Workout Total Duration
+        let workoutMins = 30; // default
+        if (p.workout && Array.isArray(p.workout)) {
+          // sum seconds / 60
+          const totalSec = p.workout.reduce((acc, curr) => acc + (curr.duration_seconds || 0), 0);
+          if (totalSec > 0) workoutMins = Math.ceil(totalSec / 60);
+          // Ensure at least 1 min if plan exists
+          if (workoutMins < 1) workoutMins = 1;
+        }
+
+        setGoals(prevGoals => prevGoals.map(g => {
+          switch (g.id) {
+            case 1: // Meditation
+              return { ...g, target: p.meditation || g.target };
+            case 2: // Exercise
+              return { ...g, target: `${workoutMins} min` };
+            case 3: // Food
+              return { ...g, target: p.food?.target ? `${p.food.target} kcal` : g.target };
+            case 4: // Water
+              return { ...g, target: p.water || g.target };
+            case 5: // Sleep
+              return { ...g, target: p.sleep || g.target };
+            default:
+              return g;
+          }
+        }));
+      }
+    }
+
+    fetchPlan();
+  }, [user]);
+
+  // Mark goal as done with confirmation and auto-fill
   const markGoalDone = (goalId) => {
-    setGoals(goals.map(goal =>
-      goal.id === goalId ? { ...goal, completed: !goal.completed } : goal
-    ));
+    const goal = goals.find(g => g.id === goalId);
+    if (!goal) return;
+
+    // If marking as done (currently not completed)
+    if (!goal.completed) {
+      if (window.confirm("Are you sure you want to mark this goal as done?")) {
+        setGoals(goals.map(g => {
+          if (g.id !== goalId) return g;
+          // Auto-fill progress to match target
+          return { ...g, completed: true, current: g.target };
+        }));
+      }
+    } else {
+      // If unmarking (toggle off), just set completed to false
+      setGoals(goals.map(g =>
+        g.id === goalId ? { ...g, completed: false } : g
+      ));
+    }
   };
 
-  // Update goal (placeholder for future implementation)
-  const updateGoal = (goalId) => {
-    alert(`Update goal functionality coming soon for goal ${goalId}`);
+  // Modal State
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [selectedGoalForUpdate, setSelectedGoalForUpdate] = useState(null);
+
+  // Meditation Choice Modal State
+  const [meditationChoiceOpen, setMeditationChoiceOpen] = useState(false);
+
+  // Regeneration Modal State
+  const [regenModalState, setRegenModalState] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    isLoading: false,
+  });
+
+  const handleRegeneratePlan = (goal) => {
+    setRegenModalState({
+      isOpen: true,
+      title: "Regenerate Plan",
+      message: `Regenerating the plan for "${goal.name}" is not implemented yet.`,
+      isLoading: false,
+    });
   };
 
-  // Add new goal (placeholder for future implementation)
+  const closeRegenModal = () => {
+    setRegenModalState(curr => ({ ...curr, isOpen: false }));
+  };
+
+
+  // Update goal progress (Redirection OR Modal)
+  const updateGoal = (goal) => {
+    // 1. Food (ID 3) and Water (ID 4) -> Redirect to Nutrition
+    if (goal.id === 3 || goal.id === 4) {
+      if (confirm(`Go to Nutrition page to track ${goal.name}?`)) {
+        navigate("/nutrition");
+      }
+      return;
+    }
+
+    // 2. Meditation (ID 1) -> Choice Modal
+    if (goal.id === 1) {
+      setSelectedGoalForUpdate(goal);
+      setMeditationChoiceOpen(true);
+      return;
+    }
+
+    // 3. Others -> Open Manual Modal directly
+    setSelectedGoalForUpdate(goal);
+    setIsUpdateModalOpen(true);
+  };
+
+  const handleMeditationChoice = (choice) => {
+    setMeditationChoiceOpen(false);
+    if (choice === 'page') {
+      navigate("/meditation");
+    } else {
+      // Manual update
+      setIsUpdateModalOpen(true);
+    }
+  };
+
+  const closeUpdateModal = () => {
+    setIsUpdateModalOpen(false);
+    setSelectedGoalForUpdate(null);
+  };
+
+  const confirmUpdateProgress = (value) => {
+    if (!selectedGoalForUpdate) return;
+
+    // Determine unit
+    const unit = selectedGoalForUpdate.id === 5 ? "hrs" : "min";
+    const numValue = parseFloat(value);
+    const targetVal = parseFloat(selectedGoalForUpdate.target) || 0;
+
+    // Warning validation: If value is surprisingly high (> 1.5x target)
+    if (numValue > (targetVal * 1.5)) {
+      if (!confirm(`That seems like a lot! Are you sure you want to log ${value} ${unit}?`)) {
+        return; // User cancelled
+      }
+    }
+
+    updateGoalProgress(selectedGoalForUpdate.id, value, unit);
+    closeUpdateModal();
+  };
+
+  // Helper to update state and check completion
+  const updateGoalProgress = (id, value, unit) => {
+    setGoals(goals.map(g => {
+      if (g.id !== id) return g;
+
+      const newVal = parseInt(value) || 0;
+      const targetVal = parseInt(g.target) || 0;
+      const isCompleted = newVal >= targetVal;
+
+      return {
+        ...g,
+        current: `${value} ${unit}`,
+        completed: isCompleted // Auto-mark if target reached
+      };
+    }));
+  };
+
+  // Add new goal (placeholder)
   const addNewGoal = () => {
-    alert("Add new goal functionality coming soon");
+    // Logic removed as per new requirements
   };
 
   return (
@@ -96,7 +278,18 @@ export default function GoalsLogic(props) {
         goals={goals}
         markGoalDone={markGoalDone}
         updateGoal={updateGoal}
+        // Modal Props
+        isUpdateModalOpen={isUpdateModalOpen}
+        closeUpdateModal={closeUpdateModal}
+        selectedGoalForUpdate={selectedGoalForUpdate}
+        confirmUpdateProgress={confirmUpdateProgress}
         addNewGoal={addNewGoal}
+        regenModalState={regenModalState}
+        closeRegenModal={closeRegenModal}
+        onRegeneratePlan={handleRegeneratePlan}
+        // Meditation Choice Props
+        meditationChoiceOpen={meditationChoiceOpen}
+        onMeditationChoice={handleMeditationChoice}
         {...props}
       />
     </Layout>

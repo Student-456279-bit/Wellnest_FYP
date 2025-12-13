@@ -8,27 +8,22 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-export default function JournalView({ data }) {
+export default function JournalView({
+  data,
+  onNewEntry,
+  onStartTemplate,
+  onOpenEntry,
+  onWriteAboutPrompt
+}) {
   const { todayPrompt, quickTemplates, pastEntries } = data;
 
-  const handleNewEntryClick = () => {
-    console.log("Navigating to create a new journal entry.");
-    // Example: navigate('/journal/new');
-  };
-
-  const handleWriteAboutItClick = () => {
-    console.log("Navigating to write about today's prompt.");
-    // Example: navigate(`/journal/new?prompt=${encodeURIComponent(todayPrompt)}`);
-  };
-
-  const handleStartTemplateClick = (path) => {
-    console.log(`Starting template: ${path}`);
-    // Example: navigate(path);
-  };
-
+  const handleNewEntryClick = onNewEntry;
+  const handleWriteAboutItClick = onWriteAboutPrompt;
+  const handleStartTemplateClick = onStartTemplate;
   const handleOpenEntryClick = (path) => {
-    console.log(`Opening journal entry: ${path}`);
-    // Example: navigate(path);
+    // Extract ID from path "/journal/entry/1"
+    const id = path.split("/").pop();
+    onOpenEntry(id);
   };
 
   return (

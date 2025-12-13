@@ -2,15 +2,201 @@ import React from "react";
 import { Sparkles, CheckCircle2, Plus } from "lucide-react";
 
 
-export default function GoalsView({ weeklyProgress, goals, markGoalDone, updateGoal, addNewGoal }) {
+import { Link } from "react-router-dom";
+
+// Modal Component for Updating Progress
+function UpdateProgressModal({ isOpen, onClose, goal, onConfirm }) {
+  const [value, setValue] = React.useState("");
+
+  // Prefill with current value when goal changes
+  React.useEffect(() => {
+    if (goal && goal.current) {
+      // Extract number from string like "5 hrs" or "30 min"
+      const numericPart = parseFloat(goal.current) || "";
+      setValue(numericPart);
+    }
+  }, [goal]);
+
+  if (!isOpen || !goal) return null;
+
+  const handleSubmit = () => {
+    onConfirm(value);
+    setValue("");
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl scale-100 animate-in zoom-in-95 duration-200">
+        <h3 className="text-xl font-bold text-slate-900 mb-2">Update Progress</h3>
+        <p className="text-sm text-slate-500 mb-6">
+          {goal.id === 5
+            ? "How many hours did you sleep last night?"
+            : `Enter duration for ${goal.name}`}
+        </p>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">
+              {goal.id === 5 ? "Hours" : "Minutes"}
+            </label>
+            <input
+              type="number"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder={goal.id === 5 ? "e.g. 8" : "e.g. 30"}
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 font-medium"
+              autoFocus
+            />
+          </div>
+
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 text-slate-600 font-semibold hover:bg-slate-50 rounded-xl transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!value}
+              className="flex-1 py-3 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-purple-200"
+            >
+              Update
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Generic Modal for Info/Loading/Confirmation
+function InfoModal({ isOpen, onClose, title, message, isLoading, onConfirm, onCancel, confirmText = "Okay", cancelText = "Cancel" }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl scale-100 animate-in zoom-in-95 duration-200 text-center">
+        {isLoading && (
+          <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
+        )}
+        <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
+        <p className="text-sm text-slate-600 mb-6">{message}</p>
+
+        {!isLoading && (
+          <div className="flex gap-3">
+            {onCancel && (
+              <button
+                onClick={onCancel}
+                className="flex-1 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-all"
+              >
+                {cancelText}
+              </button>
+            )}
+            <button
+              onClick={onConfirm || onClose}
+              className="flex-1 py-3 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-200"
+            >
+              {confirmText}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Choice Modal for Meditation
+function MeditationChoiceModal({ isOpen, onClose, onChoice }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl scale-100 animate-in zoom-in-95 duration-200 text-center">
+        <h3 className="text-xl font-bold text-slate-900 mb-2">Update Meditation</h3>
+        <p className="text-sm text-slate-600 mb-6">
+          Would you like to start a guided session or manually log your time?
+        </p>
+
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={() => onChoice('page')}
+            className="w-full py-3 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 mb-1"
+          >
+            Go to Meditation Page
+          </button>
+          <button
+            onClick={() => onChoice('manual')}
+            className="w-full py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-all"
+          >
+            Update Manually
+          </button>
+          <button
+            onClick={onClose}
+            className="text-xs text-slate-400 mt-2 hover:text-slate-600"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function GoalsView({
+  weeklyProgress,
+  goals,
+  markGoalDone,
+  updateGoal,
+  // Modal Props
+  isUpdateModalOpen,
+  closeUpdateModal,
+  selectedGoalForUpdate,
+  confirmUpdateProgress,
+  // Regen Modal Props
+  regenModalState,
+  closeRegenModal,
+  onRegeneratePlan,
+  // Meditation Choice Props
+  meditationChoiceOpen,
+  onMeditationChoice
+}) {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
+      {/* update modal */}
+      <UpdateProgressModal
+        isOpen={isUpdateModalOpen}
+        onClose={closeUpdateModal}
+        goal={selectedGoalForUpdate}
+        onConfirm={confirmUpdateProgress}
+      />
+
+      {/* Regen Modal */}
+      <InfoModal
+        isOpen={regenModalState?.isOpen}
+        onClose={closeRegenModal}
+        title={regenModalState?.title}
+        message={regenModalState?.message}
+        isLoading={regenModalState?.isLoading}
+        onConfirm={regenModalState?.onConfirm}
+        onCancel={regenModalState?.onCancel}
+        confirmText={regenModalState?.confirmText}
+        cancelText={regenModalState?.cancelText}
+      />
+
+      {/* Meditation Choice Modal */}
+      <MeditationChoiceModal
+        isOpen={meditationChoiceOpen}
+        onClose={() => onMeditationChoice('cancel')} // Treating close as cancel? Or simple close logic
+        onChoice={onMeditationChoice}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold text-slate-900">Goals</h1>
-        <a href="#" className="text-sm text-purple-600 hover:text-purple-700 font-semibold">
-          Track Progress →
-        </a>
+        <Link to="/analytics" className="text-sm text-purple-600 hover:text-purple-700 font-semibold flex items-center gap-1">
+          Track Progress <span className="text-xs">→</span>
+        </Link>
       </div>
 
       {/* AI Motivation Section */}
@@ -25,9 +211,6 @@ export default function GoalsView({ weeklyProgress, goals, markGoalDone, updateG
               You're making progress every single day, keep going!
             </p>
           </div>
-          <button className="flex-shrink-0 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors">
-            <span className="text-white text-lg">→</span>
-          </button>
         </div>
       </div>
 
@@ -80,13 +263,6 @@ export default function GoalsView({ weeklyProgress, goals, markGoalDone, updateG
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-slate-900">Current Goals</h2>
-          <button
-            onClick={addNewGoal}
-            className="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-4 py-2 text-sm font-semibold flex items-center gap-2 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add New Goal
-          </button>
         </div>
 
         {/* Goals List */}
@@ -114,19 +290,37 @@ export default function GoalsView({ weeklyProgress, goals, markGoalDone, updateG
                     {goal.description}
                   </p>
 
-                  {/* Target Badge */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className={`${goal.badgeColor} px-3 py-1 rounded-full text-xs font-semibold`}>
-                      {goal.target}
+                  {/* Target Badge & Progress */}
+                  <div className="flex flex-col gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className={`${goal.badgeColor} px-3 py-1 rounded-full text-xs font-semibold`}>
+                        Target: {goal.target}
+                      </span>
+                      <span className="text-xs text-slate-500 font-medium">
+                        Current: {goal.current}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Priority Badge */}
+                  <div className="mb-3">
+                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide ${goal.priority === 'Low' ? 'bg-green-100 text-green-600' :
+                      goal.priority === 'Medium' ? 'bg-yellow-100 text-yellow-600' :
+                        'bg-red-100 text-red-600'
+                      }`}>
+                      Priority: {goal.priority}
                     </span>
                   </div>
 
-                  {/* Feeling Message */}
+                  {/* Regenerate Plan Button */}
                   {!goal.completed && (
-                    <p className="text-xs text-orange-600 mb-3 flex items-center gap-1">
-                      <span>⚠️</span>
-                      {goal.feeling}
-                    </p>
+                    <button
+                      onClick={() => onRegeneratePlan(goal)}
+                      className="text-xs text-blue-600 mb-3 flex items-center gap-1 hover:underline font-medium hover:text-blue-700 transition-colors"
+                    >
+                      <span>🔄</span>
+                      Regenerate Plan
+                    </button>
                   )}
 
                   {/* Actions */}
@@ -142,10 +336,10 @@ export default function GoalsView({ weeklyProgress, goals, markGoalDone, updateG
                       {goal.completed ? 'Completed' : 'Mark Done'}
                     </button>
                     <button
-                      onClick={() => updateGoal(goal.id)}
+                      onClick={() => updateGoal(goal)}
                       className="text-sm text-purple-600 hover:text-purple-700 font-semibold hover:underline"
                     >
-                      Update Goal
+                      Update Progress
                     </button>
                   </div>
                 </div>
@@ -154,6 +348,6 @@ export default function GoalsView({ weeklyProgress, goals, markGoalDone, updateG
           ))}
         </div>
       </div>
-    </div>
+    </div >
   );
 }

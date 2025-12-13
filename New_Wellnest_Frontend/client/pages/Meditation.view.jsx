@@ -12,9 +12,15 @@ import {
   BatteryCharging, // Using BatteryCharging for 'Beginner' or 'Intermediate' for visual distinction
   TrendingUp,
   ArrowRight,
+  Brain,
 } from "lucide-react";
 
-export default function MeditationView({ data }) {
+export default function MeditationView({
+  data,
+  onStartSession,
+  onBackToDashboard,
+  onCategoryClick
+}) {
   const {
     category,
     description,
@@ -24,20 +30,9 @@ export default function MeditationView({ data }) {
     youMightAlsoLike,
   } = data;
 
-  const handleBackToDashboard = () => {
-    console.log("Navigating back to Dashboard");
-    // Example: navigate('/dashboard');
-  };
-
-  const handleStartSession = (sessionId) => {
-    console.log(`Starting session: ${sessionId}`);
-    // Example: navigate(`/meditation/session/${sessionId}`);
-  };
-
-  const handleCategoryClick = (path) => {
-    console.log(`Navigating to category: ${path}`);
-    // Example: navigate(path);
-  };
+  const handleStartSession = onStartSession;
+  const handleBackToDashboard = onBackToDashboard;
+  const handleCategoryClick = onCategoryClick;
 
   const getSessionButtonClasses = (color) => {
     const base = "w-full text-white py-3 rounded-lg flex items-center justify-center gap-2 font-semibold hover:opacity-90 transition-opacity";
@@ -62,20 +57,16 @@ export default function MeditationView({ data }) {
       <div className="max-w-5xl mx-auto px-4 space-y-8">
         {/* Back to Dashboard / Category Header */}
         <div className="flex justify-between items-start mb-8">
-          <div className="flex flex-col gap-2">
-            <button
-              onClick={handleBackToDashboard}
-              className="inline-flex items-center gap-2 text-purple-600 font-medium hover:text-purple-800 transition-colors"
-            >
-              <ArrowLeft size={18} /> Back to Dashboard
-            </button>
-            <div className="flex items-center gap-2 text-purple-600 font-medium">
-              <BookOpen size={18} /> Meditation Category
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Brain size={24} className="text-slate-700" />
+              <h1 className="text-2xl font-bold text-slate-900">Meditation</h1>
             </div>
+            <p className="text-slate-600">Find clarity, peace, and balance.</p>
           </div>
           {/* Top Right Meditation Icon */}
           <div className="w-24 h-24 bg-purple-200 rounded-full flex items-center justify-center -mt-4 mr-4">
-            <img src="https://i.ibb.co/k2D03gC/meditation-person.png" alt="Meditation Icon" className="w-20 h-20" /> {/* Placeholder Image */}
+            <img src="/meditation.png" alt="Meditation Icon" className="w-20 h-20 object-contain" />
           </div>
         </div>
 
@@ -103,7 +94,7 @@ export default function MeditationView({ data }) {
         </div>
 
         {/* Available Sessions Section */}
-        <div className="mb-8">
+        <div className="mb-8" id="available-sessions">
           <h2 className="text-xl font-semibold text-slate-900 mb-6">Available Sessions</h2>
           <p className="text-slate-600 mb-4">Choose a meditation that fits your schedule</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -112,10 +103,12 @@ export default function MeditationView({ data }) {
                 session.icon === "Lightbulb"
                   ? Lightbulb
                   : session.icon === "User"
-                  ? User
-                  : session.icon === "Heart"
-                  ? Heart
-                  : Sparkles; // Default if no match
+                    ? User
+                    : session.icon === "Heart"
+                      ? Heart
+                      : session.icon === "PauseCircle"
+                        ? PauseCircle
+                        : Sparkles; // Default if no match
               return (
                 <div key={session.id} className="bg-white p-6 rounded-lg shadow-sm border border-slate-100 flex flex-col justify-between">
                   <div className="flex items-center gap-4 mb-4">
@@ -154,8 +147,8 @@ export default function MeditationView({ data }) {
                 benefit.icon === "Heart"
                   ? Heart
                   : benefit.icon === "Leaf"
-                  ? Leaf
-                  : PauseCircle; // Default if no match
+                    ? Leaf
+                    : PauseCircle; // Default if no match
               return (
                 <div key={benefit.id} className={`${benefit.bgColor} p-6 rounded-lg shadow-sm border ${benefit.bgColor.replace('50', '100')}`}>
                   <div className={`w-10 h-10 ${benefit.textColor.replace('700', '600')} ${benefit.bgColor.replace('50', '200')} rounded-full flex items-center justify-center mb-4`}>
@@ -169,23 +162,7 @@ export default function MeditationView({ data }) {
           </div>
         </div>
 
-        {/* You Might Also Like Section */}
-        <div>
-          <h2 className="text-xl font-semibold text-slate-900 mb-6">You Might Also Like</h2>
-          <p className="text-slate-600 mb-4">Explore related meditation categories</p>
-          <div className="flex flex-wrap gap-3">
-            {youMightAlsoLike.map((categoryItem, index) => (
-              <button
-                key={index}
-                onClick={() => handleCategoryClick(categoryItem.path)}
-                className="bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200 text-slate-700 font-medium text-sm flex items-center gap-2 hover:bg-slate-50 transition-colors group"
-              >
-                {/* You might want to add specific icons for these categories too */}
-                {categoryItem.label} <ArrowRight size={16} className="text-purple-600 group-hover:translate-x-1 transition-transform" />
-              </button>
-            ))}
-          </div>
-        </div>
+
       </div>
     </div>
   );

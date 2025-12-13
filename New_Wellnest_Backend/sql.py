@@ -33,8 +33,18 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS Health_Profiles (
     dietaryPreference TEXT,
     cuisinePreference TEXT,
     dislikedFoods TEXT,
+
     mealsPerDay INTEGER,
     FOREIGN KEY (Users_Email) REFERENCES Users_Auth(Users_Email) ON DELETE CASCADE)""");
+
+# Create GeneratedPlans table
+cursor.execute("""CREATE TABLE IF NOT EXISTS GeneratedPlans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_email TEXT UNIQUE NOT NULL,
+    plan_data TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_email) REFERENCES Users_Auth(Users_Email) ON DELETE CASCADE
+)""");
 
 
 conn.commit()
