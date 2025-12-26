@@ -132,3 +132,59 @@ export async function generateWellnessPlan(email, regenerate = false) {
     return { error: err.message };
   }
 }
+
+// -------------------- UPDATE PROFILE --------------------
+export async function updateProfile(data) {
+  try {
+    const res = await fetch(`${API_URL_AUTH}/update_profile`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      return { error: json.message || json.error || `HTTP ${res.status}` };
+    }
+    return json;
+  } catch (err) {
+    console.error("Update Profile API call failed:", err);
+    return { error: err.message };
+  }
+}
+
+// -------------------- PERSONALIZATION --------------------
+const API_URL_PROFILE = "http://localhost:5000/api/profile";
+
+export async function savePersonalization(formData) {
+  try {
+    const res = await fetch(`${API_URL_PROFILE}/personalization/save`, {
+      method: "POST",
+      body: formData, // multipart/form-data
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      return { error: json.message || json.error || `HTTP ${res.status}` };
+    }
+    return json;
+  } catch (err) {
+    console.error("Save Personalization API call failed:", err);
+    return { error: err.message };
+  }
+}
+
+export async function getPersonalization(email) {
+  try {
+    const res = await fetch(`${API_URL_PROFILE}/personalization/get/${email}`);
+    const json = await res.json();
+
+    if (!res.ok && res.status !== 404) {
+      return { error: json.message || json.error || `HTTP ${res.status}` };
+    }
+    return json;
+  } catch (err) {
+    console.error("Get Personalization API call failed:", err);
+    return { error: err.message };
+  }
+}

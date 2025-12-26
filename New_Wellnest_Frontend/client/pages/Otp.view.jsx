@@ -1,6 +1,6 @@
 import React from "react";
 import AuthLayout from "../components/AuthLayout";
-import Button from "../components/ui/Button";
+import { Button } from "../components/ui/button";
 import { Link } from "react-router-dom";
 
 export default function OtpView({
@@ -43,7 +43,7 @@ export default function OtpView({
               disabled={!canResend}
               className={`btn-ghost ${!canResend ? "opacity-50 cursor-not-allowed" : ""}`}
             >
-              Resend OTP { !canResend && `(${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")})` }
+              Resend OTP {!canResend && `(${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")})`}
             </button>
           </div>
 

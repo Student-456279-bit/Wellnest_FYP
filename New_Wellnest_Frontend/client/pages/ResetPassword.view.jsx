@@ -1,7 +1,7 @@
 import React from "react";
 import AuthLayout from "../components/AuthLayout";
 import PasswordField from "../components/ui/PasswordField";
-import Button from "../components/ui/Button";
+import { Button } from "../components/ui/button";
 import { Link } from "react-router-dom";
 
 export default function ResetPasswordView({ form, handle, submit }) {

@@ -46,7 +46,23 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS GeneratedPlans (
     FOREIGN KEY (user_email) REFERENCES Users_Auth(Users_Email) ON DELETE CASCADE
 )""");
 
+# Create User_Personalization table
+cursor.execute("""CREATE TABLE IF NOT EXISTS User_Personalization (
+    Users_Email TEXT PRIMARY KEY NOT NULL,
+    medical_report_path TEXT,
+    current_medications TEXT,
+    mood_tracking_enabled INTEGER DEFAULT 0,
+    notification_language TEXT DEFAULT 'English',
+    sync_fitbit INTEGER DEFAULT 0,
+    sync_google_fit INTEGER DEFAULT 0,
+    sync_apple_health INTEGER DEFAULT 0,
+    interaction_preference TEXT DEFAULT 'Both',
+    ai_consent INTEGER DEFAULT 0,
+    data_sharing_consent INTEGER DEFAULT 0,
+    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (Users_Email) REFERENCES Users_Auth(Users_Email) ON DELETE CASCADE
+)""");
 
 conn.commit()
 conn.close()
-print("New Health_Profiles table created successfully with updated fields only.")
+print("Database tables created successfully: Health_Profiles, GeneratedPlans, and User_Personalization.")

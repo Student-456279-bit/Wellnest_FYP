@@ -8,8 +8,12 @@ from Chatbot import chatbot_bp
 
 app = Flask(__name__)
 
+# Configure file uploads
+app.config['UPLOAD_FOLDER'] = './uploads/medical_reports'
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
 # Enable CORS so frontend at port 8080 can access backend at port 5000
-CORS(app, resources={r"/*": {"origins": "http://localhost:8080"}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": ["http://localhost:8080", "http://localhost:8081"]}}, supports_credentials=True)
 
 # Register your blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/auth')

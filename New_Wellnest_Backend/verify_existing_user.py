@@ -2,7 +2,7 @@ import sqlite3
 import json
 from main import app
 
-DB_NAME = "./New_Wellnest_Backend/Wellnest_Database.db"
+DB_NAME = "./Wellnest_Database.db"
 
 def get_existing_user():
     conn = sqlite3.connect(DB_NAME)

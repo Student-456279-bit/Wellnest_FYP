@@ -1,18 +1,21 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Dumbbell,
-  Target,
-  Leaf,
-  Layers,
-  CheckCircle,
-  XCircle,
-  Zap,
-  RefreshCcw,
-  SlidersHorizontal,
-  Search,
+    Dumbbell,
+    Target,
+    Leaf,
+    Layers,
+    CheckCircle,
+    XCircle,
+    Zap,
+    RefreshCcw,
+    SlidersHorizontal,
+    Search,
 } from "lucide-react";
 
 const ExerciseCard = ({ exercise }) => {
+    const navigate = useNavigate();
+
     // Utility function to determine badge styling
     const getBadgeClass = (value, type) => {
         const base = "text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap";
@@ -25,8 +28,15 @@ const ExerciseCard = ({ exercise }) => {
         return `${base} bg-slate-100 text-slate-600`;
     };
 
+    const handleClick = () => {
+        navigate(`/workout/exercise/${exercise.id}`);
+    };
+
     return (
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-slate-100 transition-shadow hover:shadow-xl">
+        <div
+            onClick={handleClick}
+            className="bg-white p-6 rounded-xl shadow-lg border border-slate-100 transition-all hover:shadow-xl cursor-pointer hover:border-purple-200 hover:scale-[1.02]"
+        >
             <div className="flex justify-between items-start mb-4">
                 <h3 className="text-xl font-bold text-slate-900 line-clamp-2">
                     {exercise.exercise_name}
@@ -68,7 +78,7 @@ const ExerciseCard = ({ exercise }) => {
                     </div>
                 )}
             </div>
-            
+
             {/* Safety Badges */}
             <div className="flex gap-4 mt-4 pt-4 border-t">
                 <span className={getBadgeClass(exercise.safe_for_knee_injury, 'safety')}>
@@ -111,15 +121,15 @@ const FilterDropdown = ({ title, options, selectedValue, onChange, filterKey }) 
 
 
 export default function ExercisesView({ exercises, filters, filterOptions, onFilterChange }) {
-    
+
     const handleResetFilters = () => {
         Object.keys(filters).forEach(key => onFilterChange(key, 'All'));
     };
-    
+
     return (
         <div className="w-full pt-8 pb-8">
             <div className="max-w-7xl mx-auto px-4">
-                
+
                 {/* Header Section */}
                 <div className="mb-8">
                     <div className="flex items-center gap-2 mb-1">
@@ -151,7 +161,7 @@ export default function ExercisesView({ exercises, filters, filterOptions, onFil
                             onChange={onFilterChange}
                             filterKey="main_muscle"
                         />
-                         <FilterDropdown
+                        <FilterDropdown
                             title="Body Area"
                             options={filterOptions.body_area}
                             selectedValue={filters.body_area}
@@ -179,7 +189,7 @@ export default function ExercisesView({ exercises, filters, filterOptions, onFil
                             onChange={onFilterChange}
                             filterKey="needs_equipment"
                         />
-                        
+
                     </aside>
 
                     {/* Right Column: Exercise List */}

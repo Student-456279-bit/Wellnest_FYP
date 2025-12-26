@@ -6,7 +6,7 @@ import sqlite3
 health_bp = Blueprint('health', __name__)
 CORS(health_bp, resources={r"/*": {"origins": "http://localhost:8080"}}, supports_credentials=True)
 
-DB_PATH = "./New_Wellnest_Backend/Wellnest_Database.db"
+DB_PATH = "./Wellnest_Database.db"
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -133,3 +133,114 @@ def get_health_form(email):
             return jsonify({"message": "No health profile found for this user."}), 404
     except Exception as e:
         return jsonify({"message": "Error fetching health data", "error": str(e)}), 500
+
+# ==================== PERSONALIZATION ENDPOINTS ====================
+import os
+from werkzeug.utils import secure_filename
+
+UPLOAD_FOLDER = './uploads/medical_reports'
+ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# SAVE personalization data
+@health_bp.route("/personalization/save", methods=["POST"])
+def save_personalization():
+    try:
+        user_email = request.form.get("Users_Email")
+        
+        if not user_email:
+            return jsonify({"message": "User email is required"}), 400
+        
+        # Handle file upload
+        medical_report_path = None
+        if 'medical_report' in request.files:
+            file = request.files['medical_report']
+            if file and file.filename != '' and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                # Create user-specific directory
+                user_folder = os.path.join(UPLOAD_FOLDER, user_email.replace('@', '_at_'))
+                os.makedirs(user_folder, exist_ok=True)
+                
+                file_path = os.path.join(user_folder, filename)
+                file.save(file_path)
+                medical_report_path = file_path
+        
+        # Get form data
+        current_medications = request.form.get("current_medications", "")
+        mood_tracking_enabled = 1 if request.form.get("mood_tracking_enabled") == "true" else 0
+        notification_language = request.form.get("notification_language", "English")
+        sync_fitbit = 1 if request.form.get("sync_fitbit") == "true" else 0
+        sync_google_fit = 1 if request.form.get("sync_google_fit") == "true" else 0
+        sync_apple_health = 1 if request.form.get("sync_apple_health") == "true" else 0
+        interaction_preference = request.form.get("interaction_preference", "Both")
+        ai_consent = 1 if request.form.get("ai_consent") == "true" else 0
+        data_sharing_consent = 1 if request.form.get("data_sharing_consent") == "true" else 0
+        
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Check if record exists
+        cur.execute("SELECT * FROM User_Personalization WHERE Users_Email = ?", (user_email,))
+        existing = cur.fetchone()
+        
+        if existing:
+            # UPDATE - only update medical_report_path if a new file was uploaded
+            if medical_report_path:
+                cur.execute("""
+                    UPDATE User_Personalization
+                    SET medical_report_path=?, current_medications=?, mood_tracking_enabled=?, 
+                        notification_language=?, sync_fitbit=?, sync_google_fit=?, sync_apple_health=?,
+                        interaction_preference=?, ai_consent=?, data_sharing_consent=?
+                    WHERE Users_Email=?
+                """, (medical_report_path, current_medications, mood_tracking_enabled, notification_language,
+                      sync_fitbit, sync_google_fit, sync_apple_health, interaction_preference,
+                      ai_consent, data_sharing_consent, user_email))
+            else:
+                cur.execute("""
+                    UPDATE User_Personalization
+                    SET current_medications=?, mood_tracking_enabled=?, 
+                        notification_language=?, sync_fitbit=?, sync_google_fit=?, sync_apple_health=?,
+                        interaction_preference=?, ai_consent=?, data_sharing_consent=?
+                    WHERE Users_Email=?
+                """, (current_medications, mood_tracking_enabled, notification_language,
+                      sync_fitbit, sync_google_fit, sync_apple_health, interaction_preference,
+                      ai_consent, data_sharing_consent, user_email))
+            message = "Personalization updated successfully."
+        else:
+            # INSERT
+            cur.execute("""
+                INSERT INTO User_Personalization (
+                    Users_Email, medical_report_path, current_medications, mood_tracking_enabled,
+                    notification_language, sync_fitbit, sync_google_fit, sync_apple_health,
+                    interaction_preference, ai_consent, data_sharing_consent
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (user_email, medical_report_path, current_medications, mood_tracking_enabled,
+                  notification_language, sync_fitbit, sync_google_fit, sync_apple_health,
+                  interaction_preference, ai_consent, data_sharing_consent))
+            message = "Personalization saved successfully."
+        
+        conn.commit()
+        conn.close()
+        return jsonify({"message": message}), 200
+        
+    except Exception as e:
+        return jsonify({"message": "Error saving personalization data", "error": str(e)}), 500
+
+# GET personalization data
+@health_bp.route("/personalization/get/<email>", methods=["GET"])
+def get_personalization(email):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM User_Personalization WHERE Users_Email = ?", (email,))
+        row = cur.fetchone()
+        conn.close()
+        
+        if row:
+            return jsonify(dict(row)), 200
+        else:
+            return jsonify({"message": "No personalization data found for this user."}), 404
+    except Exception as e:
+        return jsonify({"message": "Error fetching personalization data", "error": str(e)}), 500

@@ -122,8 +122,8 @@ export default function Form() {
           console.log("Plan generation triggered:", planRes);
         });
 
-        // Redirect immediately to Dashboard
-        setTimeout(() => navigate("/dashboard"), 500);
+        // Redirect immediately to Personalization Step
+        setTimeout(() => navigate("/personalization"), 500);
 
       } else {
         toast({ title: "Error", description: data.message || "Failed to save profile." });

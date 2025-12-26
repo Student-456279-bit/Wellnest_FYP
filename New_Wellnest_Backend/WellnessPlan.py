@@ -7,7 +7,7 @@ from flask import Blueprint, request, jsonify
 wellness_bp = Blueprint('wellness_bp', __name__)
 
 # CONFIG
-DB_NAME = "./New_Wellnest_Backend/Wellnest_Database.db"
+DB_NAME = "./Wellnest_Database.db"
 NUTRITION_CSV = "./New_Wellnest_Backend/Nutrition_DS.csv"
 EXERCISE_CSV = "./New_Wellnest_Backend/Exercise_DS.csv"
 

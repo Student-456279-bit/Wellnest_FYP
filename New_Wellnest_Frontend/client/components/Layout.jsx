@@ -7,8 +7,8 @@ import { useUser } from "../../shared/UserContext.jsx";
 export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const mainPagePaths = ["/form", "/dashboard", "/nutrition", "/goals", "/wellnest-ai-chatbot", "/analytics", "/journal", "/meditation", "/workout"];
-  const isMaintPage = mainPagePaths.includes(location.pathname) || location.pathname.startsWith("/journal/") || location.pathname.startsWith("/meditation/");
+  const mainPagePaths = ["/form", "/personalization", "/dashboard", "/nutrition", "/goals", "/wellnest-ai-chatbot", "/analytics", "/journal", "/meditation", "/workout", "/settings"];
+  const isMaintPage = mainPagePaths.includes(location.pathname) || location.pathname.startsWith("/journal/") || location.pathname.startsWith("/meditation/") || location.pathname.startsWith("/workout/");
 
   // CONFIGURATION: Define which pages should show the Global Chatbot Widget
   const chatbotVisiblePaths = [
@@ -21,7 +21,7 @@ export default function Layout({ children }) {
     "/workout",
     // Note: Excluded "/wellnest-ai-chatbot" to avoid redundancy
   ];
-  const showChatbot = chatbotVisiblePaths.includes(location.pathname) || location.pathname.startsWith("/journal/") || location.pathname.startsWith("/meditation/");
+  const showChatbot = chatbotVisiblePaths.includes(location.pathname) || location.pathname.startsWith("/journal/") || location.pathname.startsWith("/meditation/") || location.pathname.startsWith("/workout/");
 
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
@@ -42,8 +42,7 @@ export default function Layout({ children }) {
 
   const handleNavigateToSettings = () => {
     setSidebarOpen(false);
-    // Placeholder for settings navigation
-    // navigate("/settings");
+    navigate("/settings");
   };
 
   return (
@@ -169,7 +168,7 @@ export default function Layout({ children }) {
                   </button>
                   <button
                     onClick={() => navigateToPage("/workout")}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${location.pathname === "/workout"
+                    className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${location.pathname.startsWith("/workout")
                       ? "bg-indigo-600 text-white font-medium"
                       : "hover:bg-slate-800"
                       }`}

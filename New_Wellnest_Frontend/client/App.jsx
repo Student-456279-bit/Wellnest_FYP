@@ -20,6 +20,7 @@ import Dashboard from "./pages/Dashboard";
 const Nutrition = lazy(() => import("./pages/Nutrition.logic.jsx"));
 // import Nutrition from "./pages/Nutrition"; // This line was removed
 import Workout from "./pages/Workout";
+import ExerciseDetails from "./pages/ExerciseDetails";
 import Goals from "./pages/Goals";
 import WellnestAiChatbot from "./pages/WellnestAiChatbot";
 import Analytics from "./pages/Analytics";
@@ -28,6 +29,8 @@ const JournalEntry = lazy(() => import("./pages/JournalEntry.logic.jsx"));
 import Meditation from "./pages/Meditation";
 const MeditationSession = lazy(() => import("./pages/MeditationSession.logic.jsx"));
 import NotFound from "./pages/NotFound";
+import Settings from "./pages/Settings.logic.jsx";
+import DeepPersonalization from "./pages/DeepPersonalization.logic.jsx";
 
 // ✅ Import UserProvider
 import { UserProvider } from "../shared/UserContext";
@@ -50,6 +53,7 @@ const App = () => (
             <Route path="/otp" element={<Otp />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/form" element={<Form />} />
+            <Route path="/personalization" element={<DeepPersonalization />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/nutrition" element={
               <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
@@ -78,6 +82,8 @@ const App = () => (
               </Suspense>
             } />
             <Route path="/workout" element={<Workout />} />
+            <Route path="/workout/exercise/:id" element={<ExerciseDetails />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

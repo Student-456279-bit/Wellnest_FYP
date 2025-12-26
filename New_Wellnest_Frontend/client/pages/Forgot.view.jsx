@@ -1,6 +1,6 @@
 import React from "react";
 import AuthLayout from "../components/AuthLayout";
-import Button from "../components/ui/Button";
+import { Button } from "../components/ui/button";
 import { Link } from "react-router-dom";
 
 export default function ForgotView({ form, handle, submit }) {

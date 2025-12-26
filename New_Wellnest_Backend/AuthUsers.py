@@ -3,7 +3,7 @@ import sqlite3
 from flask import Blueprint, request, jsonify
 
 auth_bp = Blueprint('auth_bp', __name__)
-DB_NAME = "./New_Wellnest_Backend/Wellnest_Database.db"  # keep it simple; make sure this file exists in backend folder
+DB_NAME = "./Wellnest_Database.db"  # keep it simple; make sure this file exists in backend folder
 
 # -------------------- SIGN UP --------------------
 @auth_bp.route('/signup', methods=['POST'])
@@ -93,4 +93,47 @@ def signin():
 
     except Exception as e:
         print(f"Error in signin: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# -------------------- UPDATE PROFILE --------------------
+@auth_bp.route('/update_profile', methods=['PUT'])
+def update_profile():
+    try:
+        data = request.get_json()
+
+        email = data.get('email')
+        new_username = data.get('username')
+        new_password = data.get('password')
+
+        if not email:
+             return jsonify({"message": "Email is required to identify the user."}), 400
+
+        if not new_username and not new_password:
+             return jsonify({"message": "No changes provided."}), 400
+
+        conn = sqlite3.connect(DB_NAME)
+        cur = conn.cursor()
+
+        # Check if user exists
+        cur.execute("SELECT * FROM Users_Auth WHERE Users_Email = ?", (email,))
+        if not cur.fetchone():
+            conn.close()
+            return jsonify({"message": "User not found."}), 404
+
+        # Update fields
+        if new_username:
+            cur.execute("UPDATE Users_Auth SET Users_Name = ? WHERE Users_Email = ?", (new_username, email))
+
+        if new_password:
+            cur.execute("UPDATE Users_Auth SET Users_Password = ? WHERE Users_Email = ?", (new_password, email))
+
+        conn.commit()
+        conn.close()
+
+        print(f"User profile updated for: {email}")
+        return jsonify({"message": "Profile updated successfully!", "user": {"name": new_username, "email": email}}), 200
+
+    except Exception as e:
+        print(f"Error in update_profile: {e}")
         return jsonify({"error": str(e)}), 500

@@ -3,7 +3,7 @@ import json
 import random
 from main import app
 
-DB_NAME = "./New_Wellnest_Backend/Wellnest_Database.db"
+DB_NAME = "./Wellnest_Database.db"
 TEST_EMAIL = f"test_user_{random.randint(1000, 9999)}@example.com"
 
 def setup_test_user():
