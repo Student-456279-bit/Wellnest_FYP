@@ -7,11 +7,11 @@ from sib_api_v3_sdk import Configuration, ApiClient, TransactionalEmailsApi, Sen
 forgor_bp = Blueprint("forgor_bp", __name__)
 CORS(forgor_bp)
 
-DATABASE_PATH = "./Wellnest_Database.db"
+DATABASE_PATH = "./New_Wellnest_Backend/Wellnest_Database.db"
 
 # --- Configure Brevo API ---
 configuration = Configuration()
-configuration.api_key["api-key"] = "Yahan BrevoKey aye gi maang lena mere se scrshot bhej kr"  # Replace with your key
+configuration.api_key["api-key"] = "Key maang lena"  # Replace with your key
 
 def send_reset_email(email, code):
     """Send reset code email via Brevo API"""
