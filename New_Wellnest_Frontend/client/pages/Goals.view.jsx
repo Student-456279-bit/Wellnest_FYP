@@ -143,6 +143,8 @@ function MeditationChoiceModal({ isOpen, onClose, onChoice }) {
   );
 }
 
+// Daily Summary Modal Removed
+
 export default function GoalsView({
   weeklyProgress,
   goals,
@@ -159,8 +161,33 @@ export default function GoalsView({
   onRegeneratePlan,
   // Meditation Choice Props
   meditationChoiceOpen,
-  onMeditationChoice
+  onMeditationChoice,
+  dailySummary,
+  selectedDate, // new props
+  onDateSelect
 }) {
+  const [showSummaryModal, setShowSummaryModal] = React.useState(false);
+
+  // Helper: Is this date Today?
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isToday = selectedDate === todayStr;
+
+  // Helper: Is this date Yesterday?
+  const y = new Date();
+  y.setDate(y.getDate() - 1);
+  const yesterdayStr = y.toISOString().split('T')[0];
+  const isYesterday = selectedDate === yesterdayStr;
+
+  // Format Header Date
+  const headerDate = new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  // Helper to render check/cross for daily summary
+  const renderStatus = (completed) => {
+    if (completed) return <span className="text-green-500 font-bold">✓</span>;
+    return <span className="text-red-400 font-bold">✕</span>;
+  };
+
+  const goalsList = ["Water", "Sleep", "Food", "Exercise", "Meditation"];
+  const mapKey = { "Water": "water", "Sleep": "sleep", "Food": "food", "Exercise": "exercise", "Meditation": "meditation" };
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       {/* update modal */}
@@ -170,6 +197,8 @@ export default function GoalsView({
         goal={selectedGoalForUpdate}
         onConfirm={confirmUpdateProgress}
       />
+
+      {/* update modal */}
 
       {/* Regen Modal */}
       <InfoModal
@@ -195,7 +224,7 @@ export default function GoalsView({
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold text-slate-900">Goals</h1>
         <Link to="/analytics" className="text-sm text-purple-600 hover:text-purple-700 font-semibold flex items-center gap-1">
-          Track Progress <span className="text-xs">→</span>
+          See detailed Analytics <span className="text-xs">→</span>
         </Link>
       </div>
 
@@ -216,11 +245,15 @@ export default function GoalsView({
 
       {/* Weekly Progress Section */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-            <span className="text-purple-600 text-lg">📊</span>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+              <span className="text-purple-600 text-lg">📊</span>
+            </div>
+            <h2 className="text-lg font-bold text-slate-900">Weekly Progress</h2>
           </div>
-          <h2 className="text-lg font-bold text-slate-900">Weekly Progress</h2>
+
+          {/* Summary Button Removed */}
         </div>
         <p className="text-sm text-slate-500 mb-4">View statistics for this week</p>
 
@@ -239,30 +272,62 @@ export default function GoalsView({
 
         {/* Week Days Indicators */}
         <div className="flex items-center justify-between gap-2">
-          {weeklyProgress.weekDays.map((day, index) => (
-            <div key={index} className="flex flex-col items-center gap-1">
+          {weeklyProgress.weekDays.map((day, index) => {
+            // Logic for Locking
+            const dayDate = day.date;
+            const isLocked = dayDate < yesterdayStr || dayDate > todayStr;
+            const isSelected = dayDate === selectedDate;
+
+            // Logic for Color Grading
+            let bgClass = 'bg-slate-100 text-slate-300';
+            if (day.isFuture) {
+              bgClass = 'bg-slate-100 text-slate-300';
+            } else if (day.isBeforeJoined) {
+              bgClass = 'bg-slate-100 text-slate-300 opacity-60';
+            } else if (day.completed) {
+              bgClass = 'bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-md'; // 5/5
+            } else if (day.count > 0) {
+              // Partial Progress
+              if (day.count >= 3) bgClass = 'bg-blue-100 text-blue-600 border border-blue-200'; // 3-4
+              else bgClass = 'bg-orange-50 text-orange-500 border border-orange-100'; // 1-2
+            } else {
+              bgClass = 'bg-slate-50 text-slate-400 border border-slate-100'; // 0
+            }
+
+            return (
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${day.completed
-                  ? 'bg-gradient-to-br from-purple-500 to-blue-500 text-white shadow-md'
-                  : 'bg-slate-200 text-slate-400'
-                  }`}
+                key={index}
+                className={`flex flex-col items-center gap-1 transition-all ${isLocked ? 'cursor-default opacity-80' : 'cursor-pointer hover:scale-110'}`}
+                onClick={() => !isLocked && onDateSelect(dayDate)}
               >
-                {day.completed ? (
-                  <CheckCircle2 className="w-5 h-5" />
-                ) : (
-                  <span className="text-xs font-semibold">{day.day[0]}</span>
-                )}
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border-2 
+                  ${isSelected ? 'border-purple-600 scale-110 ring-2 ring-purple-100' : 'border-transparent'}
+                  ${bgClass}`}
+                >
+                  {day.completed ? (
+                    <CheckCircle2 className="w-5 h-5" />
+                  ) : (
+                    <span className="text-xs font-bold">{day.day[0]}</span>
+                  )}
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className={`text-xs ${isSelected ? 'text-purple-700 font-bold' : 'text-slate-500'}`}>{day.day}</span>
+                  {!day.isFuture && !day.isBeforeJoined && (
+                    <span className="text-[10px] text-slate-400 font-medium">{day.count}/5</span>
+                  )}
+                </div>
               </div>
-              <span className="text-xs text-slate-500">{day.day}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
+
 
       {/* Current Goals Section */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-slate-900">Current Goals</h2>
+          <h2 className="text-lg font-bold text-slate-900">Goals for {isToday ? "Today" : isYesterday ? "Yesterday" : headerDate}</h2>
         </div>
 
         {/* Goals List */}
@@ -335,12 +400,16 @@ export default function GoalsView({
                       <CheckCircle2 className="w-4 h-4" />
                       {goal.completed ? 'Completed' : 'Mark Done'}
                     </button>
-                    <button
-                      onClick={() => updateGoal(goal)}
-                      className="text-sm text-purple-600 hover:text-purple-700 font-semibold hover:underline"
-                    >
-                      Update Progress
-                    </button>
+
+                    {/* Hide "Update Progress" if not Today (since we only support Boolean toggle for past) */}
+                    {isToday && (
+                      <button
+                        onClick={() => updateGoal(goal)}
+                        className="text-sm text-purple-600 hover:text-purple-700 font-semibold hover:underline"
+                      >
+                        Update Progress
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

@@ -1,5 +1,5 @@
-# AuthUsers.py
 import sqlite3
+from datetime import datetime
 from flask import Blueprint, request, jsonify
 
 auth_bp = Blueprint('auth_bp', __name__)
@@ -38,9 +38,10 @@ def signup():
             return jsonify({"message": "User already exists. Please log in instead."}), 400
 
         # Insert user
+        today_date = datetime.now().strftime("%Y-%m-%d")
         cur.execute(
-            "INSERT INTO Users_Auth (Users_Name, Users_Email, Users_Password) VALUES (?, ?, ?)",
-            (fullname, email, password)
+            "INSERT INTO Users_Auth (Users_Name, Users_Email, Users_Password, created_at) VALUES (?, ?, ?, ?)",
+            (fullname, email, password, today_date)
         )
         conn.commit()
         conn.close()
@@ -68,7 +69,7 @@ def signin():
         conn = sqlite3.connect(DB_NAME)
         cur = conn.cursor()
         cur.execute(
-            "SELECT Users_Name, Users_Email, Users_Password FROM Users_Auth WHERE Users_Email = ?",
+            "SELECT Users_Name, Users_Email, Users_Password, created_at FROM Users_Auth WHERE Users_Email = ?",
             (email,)
         )
         user = cur.fetchone()
@@ -77,17 +78,34 @@ def signin():
         if not user:
             return jsonify({"message": "User not found. Please sign up first."}), 404
 
-        name, user_email, stored_password = user
+        name, user_email, stored_password, created_at = user
 
         if stored_password != password:
             return jsonify({"message": "Incorrect password. Please try again."}), 401
+        # Fetch created_at (it might be the 4th column now, but better to be safe)
+        # We selected 3 columns explicitly above: Users_Name, Users_Email, Users_Password
+        # Let's re-query or fetch it properly?
+        # Actually easier to just modify the SELECT above.
+
+        # But wait, I can't modify the SELECT easily in a replace block if I don't see it.
+        # Let's see the previous SELECT:
+        # "SELECT Users_Name, Users_Email, Users_Password FROM Users_Auth ..."
+
+        # I will do a new select for created_at or assume I need to change the fetch.
+        # Let's change the fetch query.
+        try:
+            from GoalTracking import init_daily_goal
+            init_daily_goal(user_email)
+        except Exception as ex:
+            print(f"Tracking init warning: {ex}")
 
         print(f"{email} signed in successfully.")
         return jsonify({
             "message": "Login successful!",
             "user": {
                 "name": name,
-                "email": user_email
+                "email": user_email,
+                "created_at": created_at
             }
         }), 200
 

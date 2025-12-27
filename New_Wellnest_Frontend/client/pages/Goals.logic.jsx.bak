@@ -109,69 +109,31 @@ export default function GoalsLogic(props) {
         console.log("Plan fetched:", res.plan);
         const p = res.plan;
 
-        // Helper val parser
-        const val = (v) => parseInt(v) || 0;
+        // Helper to extract number from string like "20 mins" -> 20
+        const parseNum = (str) => parseInt(str) || 0;
 
-        // 1. Meditation Parser
-        // "10 mins (Daily Mindfulness)" -> "10 min"
-        let medTarget = "15 min";
-        let medValue = 15; // default
-        if (p.meditation) {
-          const mMatch = p.meditation.match(/(\d+)/);
-          if (mMatch) {
-            medTarget = `${mMatch[0]} min`;
-            medValue = parseInt(mMatch[0]);
-          }
+        // Calculate Workout Total Duration
+        let workoutMins = 30; // default
+        if (p.workout && Array.isArray(p.workout)) {
+          // sum seconds / 60
+          const totalSec = p.workout.reduce((acc, curr) => acc + (curr.duration_seconds || 0), 0);
+          if (totalSec > 0) workoutMins = Math.ceil(totalSec / 60);
+          // Ensure at least 1 min if plan exists
+          if (workoutMins < 1) workoutMins = 1;
         }
-
-        // 2. Exercise
-        // Use total_duration_minutes directly
-        let exTarget = "30 min";
-        let exValue = 30;
-        if (p.workout && p.workout.total_duration_minutes) {
-          exTarget = `${p.workout.total_duration_minutes} min`;
-          exValue = p.workout.total_duration_minutes;
-        }
-
-        // 3. Water Parser
-        // "2.5 L" -> "2500 ml"
-        let waterTarget = "2000 ml";
-        let waterValue = 2000;
-        if (p.water) {
-          const wVal = parseFloat(p.water); // 2.5
-          if (p.water.toLowerCase().includes('l')) {
-            waterValue = Math.round(wVal * 1000);
-            waterTarget = `${waterValue} ml`;
-          } else {
-            waterTarget = p.water;
-            waterValue = parseInt(p.water) || 2000;
-          }
-        }
-
-        // 4. Sleep Parser
-        let sleepTarget = "8 hrs";
-        let sleepValue = 8;
-        if (p.sleep) {
-          const sMatch = p.sleep.match(/(\d+)/);
-          if (sMatch) {
-            sleepTarget = `${sMatch[0]} hrs`;
-            sleepValue = parseInt(sMatch[0]);
-          }
-        }
-
 
         setGoals(prevGoals => prevGoals.map(g => {
           switch (g.id) {
             case 1: // Meditation
-              return { ...g, target: medTarget, targetValue: medValue };
+              return { ...g, target: p.meditation || g.target };
             case 2: // Exercise
-              return { ...g, target: exTarget, targetValue: exValue };
+              return { ...g, target: `${workoutMins} min` };
             case 3: // Food
-              return { ...g, target: p.food?.target_calories ? `${p.food.target_calories} kcal` : g.target, targetValue: p.food?.target_calories || 2000 };
+              return { ...g, target: p.food?.target_calories ? `${p.food.target_calories} kcal` : g.target };
             case 4: // Water
-              return { ...g, target: waterTarget, targetValue: waterValue };
+              return { ...g, target: p.water || g.target };
             case 5: // Sleep
-              return { ...g, target: sleepTarget, targetValue: sleepValue };
+              return { ...g, target: p.sleep || g.target };
             default:
               return g;
           }
@@ -201,7 +163,6 @@ export default function GoalsLogic(props) {
     setGoals(prevGoals => prevGoals.map(g => {
       let isCompleted = false;
       let currentDisplay = g.current; // Keep current value by default (from plan init '0 min')
-      let currentVal = g.currentValue;
 
       if (record) {
         // Map ID to column
@@ -215,8 +176,7 @@ export default function GoalsLogic(props) {
         isCompleted = record[col + "_completed"] || false;
 
         // Use numeric value if available
-        if (record[valCol] !== undefined && record[valCol] !== null) {
-          currentVal = record[valCol];
+        if (record[valCol] !== undefined && record[valCol] !== null && record[valCol] !== 0) {
           currentDisplay = `${record[valCol]} ${g.unit}`;
         }
       }
@@ -224,8 +184,7 @@ export default function GoalsLogic(props) {
       return {
         ...g,
         completed: isCompleted,
-        current: currentDisplay,
-        currentValue: currentVal
+        current: currentDisplay
       };
     }));
 
@@ -245,12 +204,9 @@ export default function GoalsLogic(props) {
 
       const today = new Date();
       const todayStr = today.toISOString().split('T')[0];
-      const timestamp = new Date().getTime();
 
-      // Fetch from API with cache busting
-      const response = await fetch(`http://localhost:5000/api/track/history/${user.email}?start=${mondayStr}&end=${todayStr}&_t=${timestamp}`, {
-        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
-      });
+      // Fetch from API
+      const response = await fetch(`http://localhost:5000/api/track/history/${user.email}?start=${mondayStr}&end=${todayStr}`);
       const data = await response.json();
 
       if (!response.ok) throw new Error("Failed to fetch history");
@@ -299,7 +255,7 @@ export default function GoalsLogic(props) {
         let dailyGoalCount = 0; // New count
         if (record) {
           const goals = ['water', 'sleep', 'food', 'exercise', 'meditation'];
-          dailyGoalCount = goals.reduce((acc, curr) => acc + (record[curr + "_completed"] ? 1 : 0), 0);
+          dailyGoalCount = goals.reduce((acc, curr) => acc + (record[curr] ? 1 : 0), 0);
 
           const allMet = dailyGoalCount === 5;
           isDayCompleted = allMet;
@@ -350,17 +306,22 @@ export default function GoalsLogic(props) {
     if (!goal) return;
 
     // If marking as done (currently not completed)
-    // If marking as done (currently not completed)
     if (!goal.completed) {
       if (window.confirm("Are you sure you want to mark this goal as done?")) {
-        // Use targetValue if available, otherwise parse from target string
-        const valueToSet = goal.targetValue !== undefined ? goal.targetValue : (parseFloat(goal.target) || 0);
-        await updateGoalProgress(goalId, valueToSet, goal.unit, true); // Force True
+        // Parse target value
+        const targetVal = parseFloat(goal.target) || 0;
+        await updateGoalProgress(goalId, targetVal, goal.unit);
       }
     } else {
-      // If unmarking (toggle off), keep current value but force status to false
-      const valToKeep = goal.currentValue !== undefined ? goal.currentValue : 0;
-      await updateGoalProgress(goalId, valToKeep, goal.unit, false); // Force False
+      // If unmarking (toggle off), just set completed to false
+      // API call needed for unmarking too?
+      // Yes, we should probably set status to false.
+      // updateGoalProgress expects a value. If we unmark, what is the value? 0?
+      // Or we just update the status flag.
+      // My API takes `status` boolean.
+      // But updateGoalProgress derives status from value >= target.
+      // If I send 0, it will be false.
+      await updateGoalProgress(goalId, 0, goal.unit);
     }
   };
 
@@ -412,53 +373,13 @@ export default function GoalsLogic(props) {
           if (workoutMins < 1) workoutMins = 1;
         }
 
-        // 1. Meditation Parser
-        let medTarget = "15 min";
-        let medValue = 15;
-        if (p.meditation) {
-          const mMatch = p.meditation.match(/(\d+)/);
-          if (mMatch) {
-            medTarget = `${mMatch[0]} min`;
-            medValue = parseInt(mMatch[0]);
-          }
-        }
-
-        // 2. Exercise
-        let exTarget = `${workoutMins} min`;
-        let exValue = workoutMins;
-
-        // 3. Water Parser
-        let waterTarget = "2000 ml";
-        let waterValue = 2000;
-        if (p.water) {
-          const wVal = parseFloat(p.water);
-          if (p.water.toLowerCase().includes('l')) {
-            waterValue = Math.round(wVal * 1000);
-            waterTarget = `${waterValue} ml`;
-          } else {
-            waterValue = parseInt(p.water) || 2000;
-            waterTarget = p.water;
-          }
-        }
-
-        // 4. Sleep Parser
-        let sleepTarget = "8 hrs";
-        let sleepValue = 8;
-        if (p.sleep) {
-          const sMatch = p.sleep.match(/(\d+)/);
-          if (sMatch) {
-            sleepTarget = `${sMatch[0]} hrs`;
-            sleepValue = parseInt(sMatch[0]);
-          }
-        }
-
         setGoals(prevGoals => prevGoals.map(g => {
           switch (g.id) {
-            case 1: return { ...g, target: medTarget, targetValue: medValue };
-            case 2: return { ...g, target: exTarget, targetValue: exValue };
-            case 3: return { ...g, target: p.food?.target_calories ? `${p.food.target_calories} kcal` : g.target, targetValue: p.food?.target_calories || 2000 };
-            case 4: return { ...g, target: waterTarget, targetValue: waterValue };
-            case 5: return { ...g, target: sleepTarget, targetValue: sleepValue };
+            case 1: return { ...g, target: p.meditation || g.target };
+            case 2: return { ...g, target: `${workoutMins} min` };
+            case 3: return { ...g, target: p.food?.target ? `${p.food.target} kcal` : g.target };
+            case 4: return { ...g, target: p.water || g.target };
+            case 5: return { ...g, target: p.sleep || g.target };
             default: return g;
           }
         }));
@@ -526,9 +447,9 @@ export default function GoalsLogic(props) {
     if (!selectedGoalForUpdate) return;
 
     // Determine unit
-    const unit = selectedGoalForUpdate.unit; // Use goal's unit
+    const unit = selectedGoalForUpdate.id === 5 ? "hrs" : "min";
     const numValue = parseFloat(value);
-    const targetVal = selectedGoalForUpdate.targetValue || parseFloat(selectedGoalForUpdate.target) || 0;
+    const targetVal = parseFloat(selectedGoalForUpdate.target) || 0;
 
     // Warning validation: If value is surprisingly high (> 1.5x target)
     if (numValue > (targetVal * 1.5)) {
@@ -537,28 +458,23 @@ export default function GoalsLogic(props) {
       }
     }
 
-    updateGoalProgress(selectedGoalForUpdate.id, numValue, unit, null); // Manual update, auto-calc status
+    updateGoalProgress(selectedGoalForUpdate.id, value, unit);
     closeUpdateModal();
   };
 
   // Helper to update state and check completion
-  const updateGoalProgress = async (id, value, unit, overrideStatus = null) => {
+  const updateGoalProgress = async (id, value, unit) => {
     // Optimistic Update locally
-    setGoals(prevGoals => prevGoals.map(g => {
+    setGoals(goals.map(g => {
       if (g.id !== id) return g;
 
-      const newVal = parseFloat(value) || 0;
-      const targetVal = g.targetValue || parseFloat(g.target) || 0;
-      let isCompleted = newVal >= targetVal;
-
-      if (overrideStatus !== null) {
-        isCompleted = overrideStatus;
-      }
+      const newVal = parseInt(value) || 0;
+      const targetVal = parseInt(g.target) || 0;
+      const isCompleted = newVal >= targetVal;
 
       return {
         ...g,
         current: `${value} ${unit}`,
-        currentValue: newVal,
         completed: isCompleted // Auto-mark if target reached
       };
     }));
@@ -579,15 +495,11 @@ export default function GoalsLogic(props) {
     if (!goalType) return;
 
     // Calculate status (Completed or not?)
-    // If it's a "mark done" action, `isMarkDone` determines the status.
-    // Otherwise, it's based on value vs target.
-    const goal = goals.find(g => g.id === id); // Get latest goal state
-    const targetVal = goal.targetValue || parseFloat(goal.target) || 0;
-
-    let isCompleted = parseFloat(value) >= targetVal;
-    if (overrideStatus !== null) {
-      isCompleted = overrideStatus;
-    }
+    // Note: 'markGoalDone' forces completed=true. Here we base it on value vs target.
+    // We need the *latest* value, which we have in `value`.
+    const goal = goals.find(g => g.id === id);
+    const targetVal = parseInt(goal.target) || 0;
+    const isCompleted = parseInt(value) >= targetVal;
 
 
     try {
@@ -598,70 +510,29 @@ export default function GoalsLogic(props) {
           user_email: user.email,
           date: selectedDate, // Use SELECTED DATE
           goal_type: goalType,
-          status: isCompleted,
-          value: parseFloat(value) // Send the numeric value
+          status: isCompleted
         })
       });
       // fetchHistory(); // Refresh summary/chart
 
       // We really should update historyData locally to reflect change instantly in UI effects
       setWeeklyProgress(prev => {
-        // 1. Update Raw History
         const newData = [...(prev.historyData || [])];
         const idx = newData.findIndex(r => r.date === selectedDate);
-        let updatedRecord = null;
-
         if (idx >= 0) {
-          updatedRecord = {
-            ...newData[idx],
-            [goalType + "_completed"]: isCompleted,
-            [goalType === 'food' ? 'food_calories' : goalType + (goalType === 'water' ? '_ml' : '_minutes')]: parseFloat(value)
-          };
-          newData[idx] = updatedRecord;
+          newData[idx] = { ...newData[idx], [goalType]: isCompleted };
         } else {
-          // Create New Stub for Today/Yesterday
-          updatedRecord = {
-            date: selectedDate,
-            [goalType + "_completed"]: isCompleted,
-            [goalType === 'food' ? 'food_calories' : goalType + (goalType === 'water' ? '_ml' : '_minutes')]: parseFloat(value)
-          };
-          newData.push(updatedRecord);
+          // Create new record stub if missing
+          const newRec = { date: selectedDate, [goalType]: isCompleted, recorded: true };
+          newData.push(newRec);
         }
 
-        // 2. Update Derived UI State (weekDays)
-        const newWeekDays = [...(prev.weekDays || [])];
-        const dayIdx = newWeekDays.findIndex(d => d.date === selectedDate);
+        // Re-calc completed count is complex here, simpler to just trigger fetchHistory or trust Effect?
+        // Let's trigger fetchHistory to be safe and clean.
+        fetchHistory();
 
-        if (dayIdx >= 0 && updatedRecord) {
-          const goals = ['water', 'sleep', 'food', 'exercise', 'meditation'];
-          const dailyGoalCount = goals.reduce((acc, curr) => acc + (updatedRecord[curr + "_completed"] ? 1 : 0), 0);
-          const isDayCompleted = dailyGoalCount === 5; // All 5 goals met
-
-          newWeekDays[dayIdx] = {
-            ...newWeekDays[dayIdx],
-            completed: isDayCompleted,
-            count: dailyGoalCount
-          };
-        }
-
-        // 3. Update Summary Count
-        const newDaysCompleted = newWeekDays.filter(d => d.completed).length;
-
-        return {
-          ...prev,
-          historyData: newData,
-          weekDays: newWeekDays,
-          daysCompleted: newDaysCompleted
-        };
+        return prev;
       });
-
-      // Also fetch fresh data to be sure
-      // Remove immediate re-fetch to prevent "flicker/revert" if backend is slow.
-      // We trust our optimistic update.
-      // setTimeout(() => fetchHistory(), 500); 
-
-      // Also fetch fresh data to be sure
-      // fetchHistory();
 
     } catch (err) {
       console.error("Failed to update goal:", err);
@@ -684,6 +555,7 @@ export default function GoalsLogic(props) {
   return (
     <Layout>
       <GoalsView
+        dailySummary={dailySummary}
         weeklyProgress={weeklyProgress}
         selectedDate={selectedDate}
         onDateSelect={handleDateSelect}

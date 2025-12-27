@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { generateWellnessPlan } from "../../shared/api.js";
+import { useUser } from "../../shared/UserContext.jsx";
 import Layout from "../components/Layout";
 import NutritionView from "./Nutrition.view.jsx";
 
@@ -6,9 +8,64 @@ export default function NutritionLogic(props) {
   // Calorie tracking state
   const [calorieData, setCalorieData] = useState({
     goal: 2000,
-    consumed: 1420,
-    remaining: 580,
+    consumed: 0, // Init to 0, fetch later?
+    remaining: 2000,
   });
+  // Determine Today's Key
+  // Helper to get today's storage key
+  const getStorageKey = () => {
+    if (!userEmail) return null;
+    const date = new Date().toISOString().split('T')[0];
+    return `wellnest_meals_${userEmail}_${date}`;
+  };
+
+  // Calorie tracking state
+
+  // Auth key from Context
+  const { user } = useUser();
+  const userEmail = user ? user.email : null;
+
+  // Helper to sync with backend
+  const syncNutritionToBackend = async (newConsumed) => {
+    if (!userEmail) return;
+    try {
+      const isMet = newConsumed >= calorieData.goal;
+      await fetch('http://localhost:5000/api/track/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_email: userEmail,
+          date: new Date().toISOString().split('T')[0],
+          goal_type: 'food',
+          status: isMet,
+          value: newConsumed
+        })
+      });
+    } catch (e) {
+      console.error("Sync error:", e);
+    }
+  };
+
+  // Helper to sync Water
+  const syncWaterToBackend = async (newMl) => {
+    if (!userEmail) return;
+    try {
+      const isMet = newMl >= waterIntake.mlGoal;
+      await fetch('http://localhost:5000/api/track/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_email: userEmail,
+          date: new Date().toISOString().split('T')[0],
+          goal_type: 'water',
+          status: isMet,
+          value: newMl
+        })
+      });
+    } catch (e) {
+      console.error("Sync error:", e);
+    }
+  };
 
   // Daily progress percentage
   const [dailyProgress, setDailyProgress] = useState(71);
@@ -38,6 +95,7 @@ export default function NutritionLogic(props) {
       glassesConsumed: newGlasses,
       mlConsumed: newMl,
     });
+    syncWaterToBackend(newMl);
   };
 
   const removeGlass = () => {
@@ -49,6 +107,7 @@ export default function NutritionLogic(props) {
         glassesConsumed: newGlasses,
         mlConsumed: newMl,
       });
+      syncWaterToBackend(newMl);
     }
   };
 
@@ -58,73 +117,42 @@ export default function NutritionLogic(props) {
       glassesConsumed: 0,
       mlConsumed: 0,
     });
+    syncWaterToBackend(0);
   };
 
-  // Meal tracking state (ready for API integration)
+  // Meal tracking state
   const [meals, setMeals] = useState({
-    breakfast: {
-      consumed: 420,
-      goal: 500,
-      items: [
-        { name: "Aloo Paratha with dahi", calories: 320 },
-        { name: "Chai (1 cup)", calories: 100 },
-      ],
-    },
-    lunch: {
-      consumed: 650,
-      goal: 700,
-      items: [
-        { name: "Chicken Karahi (1 serving)", calories: 380 },
-        { name: "Roti (2 pieces)", calories: 270 },
-      ],
-    },
-    dinner: {
-      consumed: 350,
-      goal: 600,
-      items: [{ name: "Daal Chawal", calories: 350 }],
-    },
-    snacks: {
-      consumed: 0,
-      goal: 200,
-      items: [],
-    },
+    breakfast: { consumed: 0, goal: 500, items: [] },
+    lunch: { consumed: 0, goal: 700, items: [] },
+    dinner: { consumed: 0, goal: 600, items: [] },
+    snacks: { consumed: 0, goal: 200, items: [] },
   });
+  // Load meals from localStorage on mount (Soft Save)
+  useEffect(() => {
+    const key = getStorageKey();
+    if (key) {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setMeals(parsed);
+        } catch (e) {
+          console.error("Failed to parse saved meals", e);
+        }
+      }
+    }
+  }, [userEmail]);
 
-  // Recommended meals state (ready for API integration)
-  const [recommendedMeals, setRecommendedMeals] = useState([
-    {
-      id: 1,
-      name: "Chicken Biryani",
-      description: "Aromatic rice with spices",
-      calories: 520,
-      icon: "utensils",
-      gradient: "from-green-400 to-green-600",
-    },
-    {
-      id: 2,
-      name: "Seekh Kebab",
-      description: "High protein, grilled kebabs",
-      calories: 280,
-      icon: "fish",
-      gradient: "from-yellow-400 to-yellow-600",
-    },
-    {
-      id: 3,
-      name: "Daal Makhani",
-      description: "Protein-rich lentil curry",
-      calories: 350,
-      icon: "bowl",
-      gradient: "from-green-400 to-green-600",
-    },
-    {
-      id: 4,
-      name: "Haleem",
-      description: "Traditional stew with lentils",
-      calories: 450,
-      icon: "egg",
-      gradient: "from-orange-400 to-orange-600",
-    },
-  ]);
+  // Save meals to localStorage whenever they change
+  useEffect(() => {
+    const key = getStorageKey();
+    if (key) {
+      localStorage.setItem(key, JSON.stringify(meals));
+    }
+  }, [meals, userEmail]);
+
+  // Recommended meals state (populated from Plan)
+  const [recommendedMeals, setRecommendedMeals] = useState([]);
 
   // --- Add Food Modal State & Logic ---
   const [isAddFoodModalOpen, setIsAddFoodModalOpen] = useState(false);
@@ -154,6 +182,121 @@ export default function NutritionLogic(props) {
 
     fetchFoodItems();
   }, []);
+
+  // Fetch Wellness Plan for Recommendations & Goals
+  useEffect(() => {
+    async function fetchPlan() {
+      if (!userEmail) return;
+      try {
+        const res = await generateWellnessPlan(userEmail);
+        if (res && res.plan) {
+          const p = res.plan;
+
+          // 1. Update Calorie Goal
+          if (p.food && p.food.target_calories) {
+            setCalorieData(prev => ({
+              ...prev,
+              goal: p.food.target_calories,
+              remaining: p.food.target_calories - prev.consumed
+            }));
+          }
+
+          // 2. Update Water Goal (New!)
+          if (p.water) {
+            let wGoal = 2000;
+            if (p.water.toLowerCase().includes('l')) {
+              wGoal = Math.round(parseFloat(p.water) * 1000);
+            } else {
+              wGoal = parseInt(p.water) || 2000;
+            }
+            const glasses = Math.ceil(wGoal / 250);
+
+            setWaterIntake(prev => ({
+              ...prev,
+              mlGoal: wGoal,
+              totalGlasses: glasses
+            }));
+          }
+
+          // 3. Populate Recommendations
+          if (p.food && p.food.menu) {
+            const menu = p.food.menu; // { Breakfast: "Dish (cal)", ... }
+            const recoms = [];
+            let idCounter = 1;
+
+            Object.entries(menu).forEach(([mealName, dishStr]) => {
+              // dishStr is like "Oatmeal (300 kcal)" or "No meal found"
+              if (!dishStr || dishStr.includes("No meal")) return;
+
+              // Parse "Dish Name (123 kcal)"
+              const match = dishStr.match(/(.*)\s\((\d+)\s?kcal\)/);
+              if (match) {
+                const name = match[1].trim();
+                const cals = parseInt(match[2]);
+
+                let icon = "utensils";
+                if (mealName === "Breakfast") icon = "egg";
+                if (mealName === "Lunch") icon = "bowl";
+                if (mealName === "Dinner") icon = "fish";
+
+                recoms.push({
+                  id: idCounter++,
+                  name: name,
+                  description: `Recommended for ${mealName}`,
+                  calories: cals,
+                  icon: icon,
+                  gradient: "from-green-400 to-emerald-600"
+                });
+              }
+            });
+            setRecommendedMeals(recoms);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch plan for nutrition:", err);
+      }
+    }
+    fetchPlan();
+    fetchPlan();
+  }, [userEmail]);
+
+  // Fetch Daily Progress (Consumed Calories)
+  useEffect(() => {
+    async function fetchDailyProgress() {
+      if (!userEmail) return;
+      try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const res = await fetch(`http://localhost:5000/api/track/history/${userEmail}?start=${todayStr}&end=${todayStr}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 0) {
+            const todayRecord = data.find(r => r.date === todayStr);
+            if (todayRecord) {
+              if (todayRecord.food_calories) {
+                setCalorieData(prev => ({
+                  ...prev,
+                  consumed: todayRecord.food_calories,
+                  remaining: prev.goal - todayRecord.food_calories
+                }));
+              }
+              if (todayRecord.water_ml) {
+                const ml = todayRecord.water_ml;
+                const glasses = Math.round(ml / 250);
+                setWaterIntake(prev => ({
+                  ...prev,
+                  glassesConsumed: glasses,
+                  mlConsumed: ml
+                }));
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch daily progress:", e);
+      }
+    }
+    fetchDailyProgress();
+  }, [userEmail, calorieData.goal]); // depend on goal to calc remaining correctly
 
   // Update filtered list when search query changes
   useEffect(() => {
@@ -222,6 +365,10 @@ export default function NutritionLogic(props) {
     }));
 
     handleCloseAddFoodModal();
+
+    // Sync to Backend
+    const newConsumed = calorieData.consumed + totalCalories;
+    syncNutritionToBackend(newConsumed);
   };
 
   // --- Recommended Meal Modal State & Logic ---
@@ -273,6 +420,10 @@ export default function NutritionLogic(props) {
     }));
 
     handleCloseRecommendedModal();
+
+    // Sync to Backend
+    const newConsumed = calorieData.consumed + totalCalories;
+    syncNutritionToBackend(newConsumed);
   };
 
   // Functions to handle meal actions (ready for API integration)
