@@ -6,7 +6,9 @@ import sqlite3
 health_bp = Blueprint('health', __name__)
 CORS(health_bp, resources={r"/*": {"origins": "http://localhost:8080"}}, supports_credentials=True)
 
-DB_PATH = "./New_Wellnest_Backend/Wellnest_Database.db"
+import os
+
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Wellnest_Database.db")
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)

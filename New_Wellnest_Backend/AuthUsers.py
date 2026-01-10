@@ -3,7 +3,11 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 
 auth_bp = Blueprint('auth_bp', __name__)
-DB_NAME = "./New_Wellnest_Backend/Wellnest_Database.db"  # keep it simple; make sure this file exists in backend folder
+import os
+
+# Get the directory of the current file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_NAME = os.path.join(BASE_DIR, "Wellnest_Database.db")
 
 # -------------------- SIGN UP --------------------
 @auth_bp.route('/signup', methods=['POST'])

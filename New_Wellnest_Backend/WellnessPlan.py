@@ -7,9 +7,11 @@ from flask import Blueprint, request, jsonify
 wellness_bp = Blueprint('wellness_bp', __name__)
 
 # CONFIG
-DB_NAME = "./New_Wellnest_Backend/Wellnest_Database.db"
-NUTRITION_CSV = "./New_Wellnest_Backend/Nutrition_DS.csv"
-EXERCISE_CSV = "./New_Wellnest_Backend/Exercise_DS.csv"
+# CONFIG
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_NAME = os.path.join(BASE_DIR, "Wellnest_Database.db")
+NUTRITION_CSV = os.path.join(BASE_DIR, "Nutrition_DS.csv")
+EXERCISE_CSV = os.path.join(BASE_DIR, "Exercise_DS.csv")
 
 # Global Dataframes
 df_food = None

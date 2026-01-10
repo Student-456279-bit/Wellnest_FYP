@@ -7,7 +7,9 @@ from sib_api_v3_sdk import Configuration, ApiClient, TransactionalEmailsApi, Sen
 forgor_bp = Blueprint("forgor_bp", __name__)
 CORS(forgor_bp)
 
-DATABASE_PATH = "./New_Wellnest_Backend/Wellnest_Database.db"
+import os
+
+DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Wellnest_Database.db")
 
 # --- Configure Brevo API ---
 configuration = Configuration()

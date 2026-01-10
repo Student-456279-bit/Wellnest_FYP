@@ -2,8 +2,10 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
 import sqlite3
 
+import os
+
 goal_tracking_bp = Blueprint('goal_tracking', __name__)
-DB_PATH = "./New_Wellnest_Backend/Wellnest_Database.db"
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Wellnest_Database.db")
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -140,6 +142,10 @@ def get_history(email):
         """, (email, start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")))
         
         rows = cur.fetchall()
+        
+        # Fetch targets for consistency
+        targets = get_latest_plan_targets(conn, email)
+        
         conn.close()
         
         # Convert to dict lookup
@@ -179,11 +185,51 @@ def get_history(email):
                     "sleep_hours": None,
                     "exercise_minutes": None,
                     "meditation_minutes": None,
-                    "recorded": False # frontend can use this to grey out FUTURE days, or mark PAST missing days as 'Missed'
+                    "recorded": False 
                 })
+            
+            # Inject Targets from Plan
+            # We want the targets to be available to the frontend to show "X / Target"
+            # Since plans might change, ideally we track target at the time, but for MVP we use current plan.
+            result[-1]['water_target_ml'] = targets.get('water_ml', 2000) # Default 2000
+            result[-1]['calories_target'] = targets.get('calories', 2000)
+            
             current += timedelta(days=1)
             
         return jsonify(result), 200
 
     except Exception as e:
         return jsonify({"message": "Error fetching history", "error": str(e)}), 500
+
+def get_latest_plan_targets(conn, email):
+    """Fetch user's latest plan and extract specific targets"""
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT plan_data FROM GeneratedPlans WHERE user_email = ?", (email,))
+        row = cur.fetchone()
+        if not row:
+            return {}
+            
+        import json
+        plan = json.loads(row[0])
+        
+        targets = {}
+        
+        # Extract Water: "2.3 L" -> 2300
+        w_str = plan.get('water', '')
+        if 'L' in w_str:
+            try:
+                val = float(w_str.replace('L', '').strip())
+                targets['water_ml'] = int(val * 1000)
+            except:
+                pass
+        
+        # Extract Calories
+        food = plan.get('food', {})
+        if 'target_calories' in food:
+             targets['calories'] = food['target_calories']
+             
+        return targets
+    except Exception as e:
+        print(f"Error fetching plan targets: {e}")
+        return {}
